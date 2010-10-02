@@ -2,6 +2,10 @@
 
 CONNECTION db1 "dbname=test"
 
+DATASOURCE TABLE
+    SOURCE vbus
+END
+
 COLUMN
     SORT ASC
     ALIAS busn

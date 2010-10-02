@@ -66,7 +66,7 @@ let f fld = F(fld)
 let dump (Report({columns=cols; fields=fields; connections=conn})) =
   let ident = "    "
   in let quote s = "'" ^ s ^ "'"
-  in let dump_connect i (id,s) = Printf.sprintf "%s %-8s %s\n" i id s
+  in let dump_connect i (id,s) = Printf.sprintf "%s %-8s %s\n" i id (quote s)
   in let dump_column  i c  = Printf.sprintf "%s %-8s %-16s\n" i (Option.default  "<undef>" c.column_alias)
                                                               (quote (Option.default  "<undef>" c.column_name))
   in let dump_field  i f = assert false
