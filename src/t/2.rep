@@ -1,5 +1,7 @@
 %% ТЕСТОВЫЙ ОТЧЕТ 2
 
+CONNECTION db1 "dbname=test"
+
 COLUMN
     SORT ASC
     ALIAS busn

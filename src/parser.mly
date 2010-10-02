@@ -6,6 +6,7 @@
 %token <string> IDENT
 %token FIELD COLUMN END ALIAS NAME SOURCE FILTER SORT FOLD
 %token NONE YES NO NONE ASC DESC
+%token CONNECTION
 %token EOF
 
 %start toplevel
@@ -23,6 +24,7 @@ entries:                    { [] }
 entry:
     | field                 { Ast.f $1 }
     | column                { Ast.c $1 }
+    | connection            { Ast.conn $1 }
 
 column:
     | COLUMN column_attribs END  { Ast.column $2 }
@@ -48,5 +50,9 @@ fold_args:
 
 field:
     | FIELD END                  { failwith "FIELD is not supported yet" }
+
+connection:
+    | CONNECTION IDENT STRING    { Ast.connection $2 $3 }
+
 
 %%

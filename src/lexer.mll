@@ -41,6 +41,7 @@ rule token = parse
     | "ASC"           { ASC }
     | "DESC"          { DESC }
     | "NONE"          { NONE }
+    | "CONNECTION"    { CONNECTION }
     | ident           { IDENT (lexeme lexbuf) }
 
     (* Char literals *)
