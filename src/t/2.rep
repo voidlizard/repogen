@@ -6,3 +6,10 @@ COLUMN
     NAME  "госномер"
     FOLD YES
 END
+
+COLUMN
+    SORT NONE
+    ALIAS driver
+    NAME  "водитель"
+    FOLD YES
+END
