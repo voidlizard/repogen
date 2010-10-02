@@ -19,8 +19,9 @@ let hexdigit = ['0' - '9' 'a' - 'f' 'A' - 'F']
 let hexadecimal = ("0x" | "0X") hexdigit hexdigit*
 let space   = [' ' '\t']
 
-let field = "FIELD"
-let _end  = "END"
+let column  = "COLUMN"
+let field   = "FIELD"
+let _end    = "END"
 
 
 rule token = parse
@@ -30,6 +31,7 @@ rule token = parse
 	| '\n'            { incr_linenum lexbuf; token lexbuf }
 	| decimal         { INT (int_of_string(lexeme lexbuf)) }
 	| hexadecimal     { INT (int_of_string(lexeme lexbuf)) }
+    | column          { COLUMN }
     | field           { FIELD }
     | _end            { END }
 

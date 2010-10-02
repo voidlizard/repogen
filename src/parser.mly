@@ -4,7 +4,7 @@
 %token <int> INT
 %token <string> STRING
 %token <string> IDENT
-%token FIELD END
+%token FIELD COLUMN END
 %token EOF
 
 %start toplevel
@@ -22,7 +22,14 @@ entries:                    { print_endline "empty!" }
 
 
 entry:
-    | FIELD END             { print_endline "field entry" }
+    | field                 { $1 }
+    | column                { $1 }
+
+column:
+    | COLUMN END            { print_endline "column!" }
+
+
+field:
+    | FIELD END             { print_endline "field!" }
 
 %%
-
