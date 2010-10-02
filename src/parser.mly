@@ -9,39 +9,38 @@
 %token EOF
 
 %start toplevel
-%type <Ast.ast> toplevel
+%type <Ast.report> toplevel
 
 %%
 
 toplevel:
-    | entries               { assert false }
-    | EOF                   { assert false }
+    | entries               { Ast.report $1 }
+    | EOF                   { assert false  }
 
-entries:                    { assert false }
-    | entry entries         { assert false }
+entries:                    { [] }
+    | entry entries         { $1 :: $2 }
 
 entry:
-    | field                 { assert false }
-    | column                { assert false }
+    | field                 { Ast.f $1 }
+    | column                { Ast.c $1 }
 
 column:
     | COLUMN column_attribs END  { Ast.column $2 }
 
 column_attribs:                     { [] }
-    | column_attrib column_attribs  { $1 :: [] }
+    | column_attrib column_attribs  { $1 :: $2 }
 
 column_attrib:
     | ALIAS  IDENT               { Ast.alias $2 }
     | NAME   STRING              { Ast.name  $2 }
-    | SOURCE IDENT               { assert false }
-    | FILTER IDENT               { assert false }
+    | SOURCE IDENT               { failwith "SOURCE is not supported yet" }
+    | FILTER IDENT               { failwith "FILTER is not supported yet" }
     | SORT   sort_args           { Ast.sort $2  }
     | FOLD   fold_args           { Ast.fold $2  }
 
 sort_args:
-    | ASC                        { Some(Ast.ASC)  }
-    | DESC                       { Some(Ast.DESC) }
-    | NONE                       { None }
+    | ASC                        { Ast.ASC  }
+    | DESC                       { Ast.DESC }
 
 fold_args:
     | YES                        { Ast.fold_yes () }

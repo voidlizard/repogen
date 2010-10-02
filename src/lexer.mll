@@ -21,7 +21,7 @@ let space   = [' ' '\t']
 
 
 rule token = parse
-	| "#"  [^'\n']* '\n' { print_endline "comment!"; incr_linenum lexbuf; token lexbuf }
+	| "#"  [^'\n']* '\n' { incr_linenum lexbuf; token lexbuf }
 	| "%%" [^'\n']* '\n' { incr_linenum lexbuf; token lexbuf }
 	| space           { token lexbuf }
 	| '\n'            { incr_linenum lexbuf; token lexbuf }

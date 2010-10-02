@@ -8,5 +8,5 @@ let parse_channel ch =
   in ast
 
 let () =
-  let _ = parse_channel (Pervasives.stdin)
-  in ()
+  let report = parse_channel (Pervasives.stdin)
+  in print_endline (Ast.dump report)

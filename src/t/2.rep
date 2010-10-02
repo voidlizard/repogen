@@ -8,7 +8,7 @@ COLUMN
 END
 
 COLUMN
-    SORT NONE
+    # SORT YES
     ALIAS driver
     NAME  "водитель"
     FOLD YES
