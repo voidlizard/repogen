@@ -6,7 +6,7 @@
 %token <string> IDENT
 %token FIELD COLUMN END ALIAS NAME SOURCE FILTER SORT FOLD
 %token NONE YES NO NONE ASC DESC
-%token CONNECTION
+%token CONNECTION DATASOURCE TABLE
 %token EOF
 
 %start toplevel
@@ -25,6 +25,7 @@ entry:
     | field                 { Ast.f $1 }
     | column                { Ast.c $1 }
     | connection            { Ast.conn $1 }
+    | datasource            { Ast.ds $1 }
 
 column:
     | COLUMN column_attribs END  { Ast.column $2 }
@@ -54,5 +55,14 @@ field:
 connection:
     | CONNECTION IDENT STRING    { Ast.connection $2 $3 }
 
+datasource:
+    | DATASOURCE TABLE datasource_args END  { Ast.datasource_table $3 }
+
+datasource_args:                      { [] }
+    | datasource_arg datasource_args  { $1 :: $2 }
+
+datasource_arg:
+    | SOURCE IDENT                    { Ast.ds_source $2 }
+    | ALIAS  IDENT                    { Ast.ds_alias  $2 }
 
 %%

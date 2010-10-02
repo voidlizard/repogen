@@ -3,6 +3,7 @@
 CONNECTION db1 "dbname=test"
 
 DATASOURCE TABLE
+    ALIAS  vbus
     SOURCE vbus
 END
 

@@ -42,6 +42,8 @@ rule token = parse
     | "DESC"          { DESC }
     | "NONE"          { NONE }
     | "CONNECTION"    { CONNECTION }
+    | "DATASOURCE"    { DATASOURCE }
+    | "TABLE"         { TABLE }
     | ident           { IDENT (lexeme lexbuf) }
 
     (* Char literals *)
