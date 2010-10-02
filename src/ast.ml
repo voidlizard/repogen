@@ -10,6 +10,7 @@ and connection = string * string
 and datasource = DATASOURCE of datasource_t
 and datasource_type_t = DS_TABLE
 and sort_type = ASC | DESC
+and col_src_t = SRC_REF of col_ref
 and report_t = { fields: field list;
                  columns: column list;
                  connection: connection option;
@@ -18,13 +19,16 @@ and field_t  = { field_id  : int; field_name : string  }
 and column_t = { column_alias: string option;
                  column_name : string option;
                  column_sort: sort_type option;
+                 column_source: col_src_t option;
                  column_fold: bool }
 and datasource_t = { ds_alias: string; ds_source: string; ds_type: datasource_type_t }
+and col_ref = { colref_src: string; colref_col: string }
 
 type col_attrib = | SORT of sort_type
                   | ALIAS of string
                   | NAME of string
                   | FOLD of bool
+                  | SOURCE of col_ref
 
 type ds_attrib = DS_SOURCE of string | DS_ALIAS of string
 
@@ -46,11 +50,17 @@ let column attr =
             | FOLD(true)  -> { ct with column_fold  = true }
             | FOLD(false) -> { ct with column_fold  = false }
             | ALIAS(s)    -> { ct with column_alias = Some(s) }
+            | SOURCE(s)   -> { ct with column_source = Some(SRC_REF(s)) }
             | NAME(s)     -> { ct with column_name  = Some(s) } )
                           { column_alias = None;
                             column_name  = None;
                             column_sort  = None;
+                            column_source = None;
                             column_fold  = false } attr)
+
+let col_source s = SOURCE(s)
+
+let col_ref s c = { colref_src = s; colref_col = c }
 
 let sort s = SORT(s)
 
@@ -96,8 +106,20 @@ let dump (Report({columns=cols; fields=fields; connection=conn; datasources=ds})
     | Some((id,s)) -> Printf.sprintf "%s %-8s %s" i id (quote s)
     | None         -> Printf.sprintf "n/a"
 
-  in let dump_column  i c  = Printf.sprintf "%s %-8s %-16s" i (Option.default  "<undef>" c.column_alias)
-                                                              (quote (Option.default  "<undef>" c.column_name))
+
+  in let dump_col_src = function
+    | Some(SRC_REF{colref_src=s;colref_col=c}) -> Printf.sprintf "%s.%s" s c
+    | None                                     -> "<undef>"
+
+  in let dump_column  i c  = Printf.sprintf "%s %-8s %-16s fold:%-5s sort:%-5s %-16s"
+                                             i (Option.default  "<undef>" c.column_alias)
+                                               ( dump_col_src c.column_source )
+                                               ( if c.column_fold then "true" else "false")
+                                               ( match c.column_sort with
+                                                 | Some(ASC)  -> "asc"
+                                                 | Some(DESC) -> "desc"
+                                                 | None       -> "none")
+                                               (quote (Option.default  "<undef>" c.column_name))
   in let dump_field  i f = assert false
 
   in Printf.sprintf "CONNECTIONS\n%s\n\nDATASOURCES\n%s\n\nFIELDS\n%s\nCOLUMNS\n%s\n"

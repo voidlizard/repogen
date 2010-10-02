@@ -8,14 +8,16 @@ DATASOURCE TABLE
 END
 
 COLUMN
-    SORT ASC
+    SOURCE vbus.gos_number
     ALIAS busn
     NAME  "госномер"
+    SORT ASC
     FOLD YES
 END
 
 COLUMN
     # SORT YES
+    SOURCE vbus.driver_name
     ALIAS driver
     NAME  "водитель"
     FOLD YES

@@ -4,6 +4,7 @@
 %token <int> INT
 %token <string> STRING
 %token <string> IDENT
+%token DOT
 %token FIELD COLUMN END ALIAS NAME SOURCE FILTER SORT FOLD
 %token NONE YES NO NONE ASC DESC
 %token CONNECTION DATASOURCE TABLE
@@ -36,7 +37,7 @@ column_attribs:                     { [] }
 column_attrib:
     | ALIAS  IDENT               { Ast.alias $2 }
     | NAME   STRING              { Ast.name  $2 }
-    | SOURCE IDENT               { failwith "SOURCE is not supported yet" }
+    | SOURCE col_ref             { Ast.col_source $2 }
     | FILTER IDENT               { failwith "FILTER is not supported yet" }
     | SORT   sort_args           { Ast.sort $2  }
     | FOLD   fold_args           { Ast.fold $2  }
@@ -48,6 +49,11 @@ sort_args:
 fold_args:
     | YES                        { Ast.fold_yes () }
     | NO                         { Ast.fold_no  () }
+
+
+col_ref:
+    | IDENT DOT IDENT            { Ast.col_ref $1 $3 }
+
 
 field:
     | FIELD END                  { failwith "FIELD is not supported yet" }

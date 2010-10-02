@@ -19,7 +19,6 @@ let hexdigit = ['0' - '9' 'a' - 'f' 'A' - 'F']
 let hexadecimal = ("0x" | "0X") hexdigit hexdigit*
 let space   = [' ' '\t']
 
-
 rule token = parse
 	| "#"  [^'\n']* '\n' { incr_linenum lexbuf; token lexbuf }
 	| "%%" [^'\n']* '\n' { incr_linenum lexbuf; token lexbuf }
@@ -44,6 +43,7 @@ rule token = parse
     | "CONNECTION"    { CONNECTION }
     | "DATASOURCE"    { DATASOURCE }
     | "TABLE"         { TABLE }
+    | "."             { DOT }
     | ident           { IDENT (lexeme lexbuf) }
 
     (* Char literals *)
