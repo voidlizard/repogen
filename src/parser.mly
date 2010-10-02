@@ -17,7 +17,6 @@ toplevel:
     | entries               { assert false }
     | EOF                   { assert false }
 
-
 entries:                    { assert false }
     | entry entries         { assert false }
 
@@ -29,7 +28,7 @@ column:
     | COLUMN column_attribs END  { assert false }
 
 column_attribs:                  { assert false }
-    | column_attrib column_attribs   { assert false }
+    | column_attrib column_attribs  { assert false }
 
 column_attrib:
     | ALIAS  IDENT               { assert false }
