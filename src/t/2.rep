@@ -1,0 +1,6 @@
+%% ТЕСТОВЫЙ ОТЧЕТ 2
+
+COLUMN
+    ALIAS busn
+    NAME  "госномер"
+END
