@@ -5,6 +5,7 @@
 %token <string> STRING
 %token <string> IDENT
 %token FIELD COLUMN END ALIAS NAME SOURCE FILTER SORT FOLD
+%token NONE YES NO NONE ASC DESC
 %token EOF
 
 %start toplevel
@@ -35,8 +36,17 @@ column_attrib:
     | NAME   STRING              { Printf.printf "(name %s)\n" $2 }
     | SOURCE IDENT               { Printf.printf "(source %s)\n" $2 }
     | FILTER IDENT               { Printf.printf "(filter %s)\n" $2 }
-    | SORT   IDENT               { Printf.printf "(sort %s)\n" $2 }
-    | FOLD   IDENT               { Printf.printf "(fold %s)\n" $2 }
+    | SORT   sort_args           { Printf.printf "(sort)\n"  }
+    | FOLD   fold_args           { Printf.printf "(fold)\n" }
+
+sort_args:
+    | ASC                        { Printf.printf "(sort_asc)\n" }
+    | DESC                       { Printf.printf "(sort_desc)\n" }
+    | NONE                       { Printf.printf "(sort_none)\n" }
+
+fold_args:
+    | YES                        { Printf.printf "(fold_yes)\n" }
+    | NO                         { Printf.printf "(fold_no)\n" }
 
 field:
     | FIELD END             { print_endline "field!" }

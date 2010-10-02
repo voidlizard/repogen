@@ -1,6 +1,8 @@
 %% ТЕСТОВЫЙ ОТЧЕТ 2
 
 COLUMN
+    SORT ASC
     ALIAS busn
     NAME  "госномер"
+    FOLD YES
 END

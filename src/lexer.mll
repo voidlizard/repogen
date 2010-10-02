@@ -36,6 +36,11 @@ rule token = parse
     | "NAME"          { NAME }
     | "SORT"          { SORT }
     | "SOURCE"        { SOURCE }
+    | "YES"           { YES }
+    | "NO"            { NO }
+    | "ASC"           { ASC }
+    | "DESC"          { DESC }
+    | "NONE"          { NONE }
     | ident           { IDENT (lexeme lexbuf) }
 
     (* Char literals *)
