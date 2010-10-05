@@ -20,12 +20,12 @@ let hexadecimal = ("0x" | "0X") hexdigit hexdigit*
 let space   = [' ' '\t']
 
 rule token = parse
-	| "#"  [^'\n']* '\n' { incr_linenum lexbuf; token lexbuf }
-	| "%%" [^'\n']* '\n' { incr_linenum lexbuf; token lexbuf }
-	| space           { token lexbuf }
-	| '\n'            { incr_linenum lexbuf; token lexbuf }
-	| decimal         { INT (int_of_string(lexeme lexbuf)) }
-	| hexadecimal     { INT (int_of_string(lexeme lexbuf)) }
+    | "#"  [^'\n']* '\n' { incr_linenum lexbuf; token lexbuf }
+    | "%%" [^'\n']* '\n' { incr_linenum lexbuf; token lexbuf }
+    | space           { token lexbuf }
+    | '\n'            { incr_linenum lexbuf; token lexbuf }
+    | decimal         { INT (int_of_string(lexeme lexbuf)) }
+    | hexadecimal     { INT (int_of_string(lexeme lexbuf)) }
     | "ALIAS"         { ALIAS }
     | "COLUMN"        { COLUMN }
     | "END"           { END }
@@ -49,8 +49,8 @@ rule token = parse
     (* Char literals *)
     | '\'' ([^'\'']+ as c) '\'' { INT ( Char.code ((unescape c).[0]) ) }
 
-	| '\"' (([^'\"']|'\\' '"')* as s) '\"' { STRING((unescape s)) }
-	| eof             { EOF }
+    | '\"' (([^'\"']|'\\' '"')* as s) '\"' { STRING((unescape s)) }
+    | eof             { EOF }
 
 {
 }
