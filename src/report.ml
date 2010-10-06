@@ -1,13 +1,15 @@
 open ExtList
 open ExtString
+open Util
 
-type report_t = { columns: col_t list }
+type report_t = { columns: col_t list; datasources: (string * datasource_t) list }
 and col_t = { col_name: string option;
               col_alias: string option;
               col_order: order_t option;
               col_source: source_t }
 and order_t = ASC | DESC
 and source_t = COLUMN of string * string
+and datasource_t = DS_TABLE of string
 
 let ident i s = Printf.sprintf "%s %s" i s
 
@@ -34,6 +36,10 @@ let sql_of x =
         in match ordby with Some(c) -> q ^ (Printf.sprintf "\norder by\n%s" c)
                             | _     -> q
 
+    in let ds_of_col rep = function {col_source = COLUMN(n, c)} ->
+        try (n, List.assoc n rep.datasources)
+        with Not_found -> failwith (Printf.sprintf "No datasource definition: %s" n)
+
     in let emit_select_cols  columns = 
         String.join ",\n" (List.map (fun x -> ident idnt x)
                                     (List.map emit_column columns))
@@ -52,6 +58,13 @@ let sql_of x =
                     (List.map (fun {col_source=cs; col_order=o} -> (i1 (Printf.sprintf "%s%s" (fcn cs) (emit_ord_cnd o))) ) 
                               cols)
 
+
+    in let emit_from rep = 
+        let ds = List.map (fun x -> ds_of_col rep x) rep.columns |> List.unique
+        in let _ = if List.length ds > 1 then failwith "Several datasources found. Joins are not supported yet"
+        in let (n, DS_TABLE(s)) = List.hd ds
+        in Printf.sprintf "%s %s" s n
+
     in let rep  = normalize_report x
 
 
@@ -65,7 +78,7 @@ let sql_of x =
    
     in let nested = List.length ord_cols > 0
 
-    in let sel = emit_select cols ""
+    in let sel = emit_select cols (emit_from rep)
 
     in if not nested 
        then sel 

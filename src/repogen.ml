@@ -29,7 +29,8 @@ let () =
                                  col_order = Some(ASC);
                                  col_source = COLUMN("vbus","field")
                                }; 
-                             ]
+                             ];
+                   datasources = [("vbus", DS_TABLE("vbus"))]
                  }
 
     in print_endline (sql_of rep)
