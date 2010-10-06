@@ -14,17 +14,20 @@ let () =
     in let _ = print_endline (Ast.dump report)
 
     in let rep = { columns = [ 
-                               { col_name  = Some("водитель");
-                                 col_alias = Some("drv");
-                                 col_order = None
+                               { col_name   = Some("водитель");
+                                 col_alias  = Some("drv");
+                                 col_order  = None;
+                                 col_source = COLUMN("vbus", "driver")
                                }; 
                                { col_name  = Some("госномер");
                                  col_alias = Some("numb");
-                                 col_order = Some(ASC)
+                                 col_order = Some(ASC);
+                                 col_source = COLUMN("vbus","gos_number")
                                }; 
                                { col_name  = None;
                                  col_alias = None;
-                                 col_order = Some(ASC)
+                                 col_order = Some(ASC);
+                                 col_source = COLUMN("vbus","field")
                                }; 
                              ]
                  }
