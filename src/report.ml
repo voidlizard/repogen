@@ -23,9 +23,11 @@ let sql_of x =
     let idnt = "   "
     in let i1 = ident idnt
     in let alias x = try Option.get x with Option.No_value -> failwith "Alias is not defined"
-    
+   
+    in let fcn = function COLUMN(table, name) -> Printf.sprintf "%s.%s" table name
+
     in let emit_column x = match x with
-       | {col_source = COLUMN(q, c); col_alias = a} -> Printf.sprintf "%s.%s as %s" q c (alias a)
+       | {col_source = cs; col_alias = a} -> Printf.sprintf "%s as %s" (fcn cs) (alias a)
     
     in let emit_select ?(ordby = None) cols from    =
         let q = Printf.sprintf "select \n%s\nfrom %s" cols from
@@ -41,16 +43,25 @@ let sql_of x =
     in let wrap_subquery_cols (cols:col_t list) name = 
         List.map (fun x -> { x with col_source = COLUMN(name, (alias x.col_alias)) } ) cols
 
+    in let emit_ord_cnd  = function Some(ASC)  -> " asc" 
+                                  | Some(DESC) -> " desc"
+                                  | _          -> "" 
+
     in let emit_ordby cols =
-        String.join ",\n" (List.map (fun {col_alias=a; col_order=o} -> (i1 (Printf.sprintf "%s%s" (alias a) "")) ) 
-                                    cols)  
+        String.join ",\n" 
+                    (List.map (fun {col_source=cs; col_order=o} -> (i1 (Printf.sprintf "%s%s" (fcn cs) (emit_ord_cnd o))) ) 
+                              cols)
 
     in let rep  = normalize_report x
 
 
     in let cols  = emit_select_cols rep.columns
 
-    in let ord_cols = List.filter (function  {col_order = Some(x)} -> true | _ -> false) rep.columns
+    in let sq = "sq"
+
+    in let ord_cols = (wrap_subquery_cols (List.filter (function  {col_order = Some(x)} -> true | _ -> false)
+                                          rep.columns)
+                                          sq)
    
     in let nested = List.length ord_cols > 0
 
@@ -58,8 +69,8 @@ let sql_of x =
 
     in if not nested 
        then sel 
-       else emit_select (emit_select_cols (wrap_subquery_cols rep.columns "sq")) 
-                        (wrap_subquery sel "sq") 
+       else emit_select (emit_select_cols (wrap_subquery_cols rep.columns sq)) 
+                        (wrap_subquery sel sq) 
                         ~ordby:(Some(emit_ordby ord_cols))
 
 
