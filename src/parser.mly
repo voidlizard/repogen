@@ -11,6 +11,7 @@ module B = Report_builder
 %token FIELD COLUMN END ALIAS NAME SOURCE FILTER SORT FOLD
 %token NONE YES NO NONE ASC DESC
 %token CONNECTION DATASOURCE TABLE
+%token TEMPLATE TEMPLATE_DIRS
 %token EOF
 
 %start toplevel
@@ -27,6 +28,8 @@ entries:                    { [] }
 
 entry:
     | field                 { assert false }
+    | template              { $1 }
+    | template_dirs         { $1 }
     | column                { B.with_column $1 }
     | connection            { B.with_connection $1 }
     | datasource            { B.with_datasource $1 }
@@ -58,6 +61,12 @@ col_ref:
 
 field:
     | FIELD END                  { failwith "FIELD is not supported yet" }
+
+template:
+    | TEMPLATE STRING            { B.with_template $2 }
+
+template_dirs:
+    | TEMPLATE_DIRS STRING       { B.with_template_dirs $2 }
 
 connection:
     | CONNECTION IDENT STRING    { ( $2, $3) }

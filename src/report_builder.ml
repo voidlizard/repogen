@@ -1,5 +1,6 @@
 open Report
 open ExtList
+open ExtString
 
 type ds_tbl_def = { ds_alias: string; ds_src: string }
 
@@ -41,12 +42,19 @@ let with_column cattr report =
                               cattr
     in { report with columns = col  :: report.columns }
 
+let with_template tpl report = { report with template = Some(tpl) }
+
+let with_template_dirs d report = 
+    { report with template_dirs = report.template_dirs @ List.map String.strip (String.nsplit d ":") }
+
 let build_report e  = 
     let rep = { columns = []; 
                 datasources = [];
-                connections = []
+                connections = [];
+                template = None;
+                template_dirs = ["."]
               }
     in let r = List.fold_left (fun r f -> f r) rep e 
-    in { r with columns = List.rev r.columns }
+    in normalize_report { r with columns = List.rev r.columns }
 
 

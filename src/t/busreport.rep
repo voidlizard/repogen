@@ -2,6 +2,10 @@
 
 CONNECTION db1 "dbname=mososm2"
 
+TEMPLATE_DIRS "t:/home/dmz/templates"
+
+TEMPLATE "busreport.tmpl"
+
 DATASOURCE TABLE
     ALIAS  v
     SOURCE vf_report

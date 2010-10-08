@@ -40,6 +40,8 @@ rule token = parse
     | "ASC"           { ASC }
     | "DESC"          { DESC }
     | "NONE"          { NONE }
+    | "TEMPLATE"      { TEMPLATE }
+    | "TEMPLATE_DIRS" { TEMPLATE_DIRS }
     | "CONNECTION"    { CONNECTION }
     | "DATASOURCE"    { DATASOURCE }
     | "TABLE"         { TABLE }

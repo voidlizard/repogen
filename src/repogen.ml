@@ -8,7 +8,6 @@ open Report_model
 module Db = Db_pg
 module T = Templating.Templating
 
-
 open Printf
 
 let parse_channel ch =
@@ -26,20 +25,27 @@ let () =
     
     in let _ = List.iter (fun (a, DS_TABLE(n)) -> Printf.printf "%s %s\n" a n) report.datasources
     in let _ = List.iter (fun (a, b) -> Printf.printf "%s %s\n" a b) report.connections
+    in let _ = List.iter (fun a -> Printf.printf "%s\n" a) report.template_dirs
+
+
     in let sql = sql_of report
     in let _ = print_endline sql
    
     in let cache = T.cache ()
-    in let tmpl  = T.from_file cache "hello.tmpl"
 
     in 
         try
             let data = Db.with_connection (fun conn -> Db.select_all conn sql (fun ds -> list_of_ds report ds))
                                                                               (connection_of report)
             in let model = Model.make (column_headers report) data [("message", "HELLO!")]
-            in let s = T.render_string tmpl model 
-            in let () = print_endline s
-            in ()
+
+            in match report.template with 
+               | Some(s) ->
+                   let tmpl  = T.from_file cache s
+                   in let s = T.render_string tmpl model 
+                   in print_endline s
+               | None -> ()
+            
         with Error e -> prerr_endline (string_of_error e)
              | e     -> prerr_endline (Printexc.to_string e)
 

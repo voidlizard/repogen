@@ -5,6 +5,8 @@ open Util
 type report_t = { columns: col_t list;
                   datasources: (string * datasource_t) list;
                   connections: (string * connection_t) list;
+                  template: string option;
+                  template_dirs: string list
                 }
 and col_t = { col_name: string option;
               col_alias: string option;
@@ -19,12 +21,29 @@ let ident i s = Printf.sprintf "%s %s" i s
 
 let ident_all i s = List.map (fun x -> ident i x) s
 
+
+let enum_file_names dirs fname = 
+    List.map ( fun x -> Filename.concat x fname ) dirs
+
+let filt_by_permiss perm fnames = 
+    List.filter ( fun f -> try (Unix.access f perm ; true)
+                           with Unix.Unix_error _ -> false ) fnames
+
 let rec normalize_report rep =
-    { rep with columns = normalize_columns rep.columns }
+    { rep with columns = normalize_columns rep.columns;
+               template = normalize_template rep.template_dirs rep.template }
 and normalize_columns cols = List.mapi normalize_column cols
 and normalize_column i  = function ({ col_alias = None } as c)  -> { c with col_alias = Some(Printf.sprintf "col%d" i) }
                                   |({ col_alias = Some _} as c) -> c
 
+and normalize_template dirs fname =
+    match fname with 
+    | Some(x) -> (let fnames = enum_file_names dirs x |> filt_by_permiss [Unix.F_OK; Unix.R_OK]
+                 in match fnames with 
+                    | x :: _ -> Printf.printf "!!! %s\n" x; Some(x)
+                    | []     -> None)
+    
+    | None    -> None
 
 let column_headers report = 
     List.map ( function   { col_name = Some(n); col_alias = Some(a) } -> (a, n)
@@ -35,7 +54,7 @@ let column_headers report =
 
 let connection_of r = snd (List.hd r.connections)
 
-let sql_of x =
+let sql_of rep =
     let idnt = "   "
     in let i1 = ident idnt
     in let alias x = try Option.get x with Option.No_value -> failwith "Alias is not defined"
@@ -72,15 +91,11 @@ let sql_of x =
                     (List.map (fun {col_source=cs; col_order=o} -> (i1 (Printf.sprintf "%s%s" (fcn cs) (emit_ord_cnd o))) ) 
                               cols)
 
-
     in let emit_from rep = 
         let ds = List.map (fun x -> ds_of_col rep x) rep.columns |> List.unique
         in let _ = if List.length ds > 1 then failwith "Several datasources found. Joins are not supported yet"
         in let (n, DS_TABLE(s)) = List.hd ds
         in Printf.sprintf "%s %s" s n
-
-    in let rep  = normalize_report x
-
 
     in let cols  = emit_select_cols rep.columns
 
