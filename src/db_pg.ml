@@ -2,7 +2,7 @@ open Postgresql
 
 let select_all (conn:connection) sql f = 
     let res = (conn#exec ~expect:[Tuples_ok] sql)
-    in  f res#get_all
+    in  f res#get_all_lst
 
 let with_connection f conn_info = 
     let c = new connection ~conninfo:conn_info ()

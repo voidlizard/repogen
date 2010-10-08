@@ -1,1 +1,1 @@
-<*.ml> or "repogen.byte" or "repogen.native": pkg_unix, pkg_postgresql, pkg_extlib, pkg_threads
+<*.ml> or "repogen.byte" or "repogen.native": pkg_unix, pkg_postgresql, pkg_extlib, pkg_threads, pkg_camltemplate

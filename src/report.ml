@@ -26,6 +26,13 @@ and normalize_column i  = function ({ col_alias = None } as c)  -> { c with col_
                                   |({ col_alias = Some _} as c) -> c
 
 
+let column_headers report = 
+    List.map ( function   { col_name = Some(n); col_alias = Some(a) } -> (a, n)
+                        | { col_name = None;    col_alias = Some(a) } -> (a, a)
+                        | { col_name = None;    col_alias = None }    -> ("undef", "undef")
+                        | { col_name = Some(x); col_alias = None }    -> assert false )
+             report.columns
+
 let connection_of r = snd (List.hd r.connections)
 
 let sql_of x =

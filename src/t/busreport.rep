@@ -1,0 +1,24 @@
+%% ТЕСТОВЫЙ ОТЧЕТ 3
+
+CONNECTION db1 "dbname=mososm2"
+
+DATASOURCE TABLE
+    ALIAS  v
+    SOURCE vf_report
+END
+
+COLUMN
+    SOURCE v.gos_number
+    ALIAS busn
+    NAME  "госномер"
+    SORT ASC
+    %% FOLD YES
+END
+
+COLUMN
+    SOURCE v.driver_name
+    ALIAS driver
+    NAME  "водитель"
+    %% FOLD YES
+END
+
