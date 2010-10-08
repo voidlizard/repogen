@@ -11,7 +11,9 @@ let parse_channel ch =
 
 let () =
     let report = parse_channel (Pervasives.stdin)
-    in let _ = print_endline (Ast.dump report)
+
+    in let _ = List.iter (fun (a, DS_TABLE(n)) -> Printf.printf "%s %s\n" a n) report.datasources
+    in let _ = List.iter (fun (a, b) -> Printf.printf "%s %s\n" a b) report.connections
 
     in let rep = { columns = [ 
                                { col_name   = Some("водитель");
@@ -30,7 +32,8 @@ let () =
                                  col_source = COLUMN("vbus","field")
                                }; 
                              ];
-                   datasources = [("vbus", DS_TABLE("vbus"))]
+                   datasources = [("vbus", DS_TABLE("vbus"))];
+                   connections = [("mososm2", "dbname = mososm2")]
                  }
 
     in print_endline (sql_of rep)

@@ -2,7 +2,10 @@ open ExtList
 open ExtString
 open Util
 
-type report_t = { columns: col_t list; datasources: (string * datasource_t) list }
+type report_t = { columns: col_t list;
+                  datasources: (string * datasource_t) list;
+                  connections: (string * connection_t) list
+                }
 and col_t = { col_name: string option;
               col_alias: string option;
               col_order: order_t option;
@@ -10,6 +13,7 @@ and col_t = { col_name: string option;
 and order_t = ASC | DESC
 and source_t = COLUMN of string * string
 and datasource_t = DS_TABLE of string
+and connection_t = string
 
 let ident i s = Printf.sprintf "%s %s" i s
 

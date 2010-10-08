@@ -1,0 +1,9 @@
+%% ТЕСТОВЫЙ ОТЧЕТ 2
+
+CONNECTION db1 "dbname=test"
+
+DATASOURCE TABLE
+    SOURCE vbus
+    ALIAS  vbus
+END
+
