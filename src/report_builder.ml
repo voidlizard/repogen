@@ -46,6 +46,7 @@ let build_report e  =
                 datasources = [];
                 connections = []
               }
-    in List.fold_left (fun r f -> f r) rep e 
+    in let r = List.fold_left (fun r f -> f r) rep e 
+    in { r with columns = List.rev r.columns }
 
 
