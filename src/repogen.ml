@@ -22,10 +22,10 @@ let () =
     in let _ = List.iter (fun (a, DS_TABLE(n)) -> Printf.printf "%s %s\n" a n) report.datasources
     in let _ = List.iter (fun (a, b) -> Printf.printf "%s %s\n" a b) report.connections
     in let sql = sql_of report
-(*    in let _ = print_endline sql*)
+    in let _ = print_endline sql
     in 
         try
-            Db.with_connection (fun conn -> ignore (Db.select_all conn sql print_rows)) "dbname=test" 
+            Db.with_connection (fun conn -> ignore (Db.select_all conn sql print_rows)) (connection_of report)
         with Error e -> prerr_endline (string_of_error e)
              | e     -> prerr_endline (Printexc.to_string e)
 

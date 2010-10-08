@@ -25,6 +25,9 @@ and normalize_columns cols = List.mapi normalize_column cols
 and normalize_column i  = function ({ col_alias = None } as c)  -> { c with col_alias = Some(Printf.sprintf "col%d" i) }
                                   |({ col_alias = Some _} as c) -> c
 
+
+let connection_of r = snd (List.hd r.connections)
+
 let sql_of x =
     let idnt = "   "
     in let i1 = ident idnt
