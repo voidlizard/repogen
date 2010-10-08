@@ -43,15 +43,15 @@ column_attrib:
     | SOURCE col_ref             { B.with_col_source $2 }
     | FILTER IDENT               { failwith "FILTER is not supported yet" }
     | SORT   sort_args           { B.with_col_order $2 }
-    | FOLD   fold_args           { failwith "FOLD is not supported yet" }
+    | FOLD fold_arg              { assert false }
 
 sort_args:
     | ASC                        { B.col_order_asc  () }
     | DESC                       { B.col_order_desc () }
 
-fold_args:
-    | YES                        { assert false }
-    | NO                         { assert false }
+fold_arg:
+    | YES                        { failwith "FOLD is not supported yet" }
+    | NO                         { failwith "FOLD is not supported yet" }
 
 col_ref:
     | IDENT DOT IDENT            { B.col_ref $1 $3 }

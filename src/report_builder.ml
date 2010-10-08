@@ -32,8 +32,14 @@ let col_order_asc ()  = Some(ASC)
 let col_order_desc () = Some(DESC)
 
 let with_column cattr report = 
-    let col_def = assert false
-    in { report with columns = (col_def cattr) :: report.columns }
+    let col = List.fold_left (fun c f -> f c)
+                             { col_name  = None;
+                               col_alias = None;
+                               col_order = None;
+                               col_source = COLUMN("","")
+                              }
+                              cattr
+    in { report with columns = col  :: report.columns }
 
 let build_report e  = 
     let rep = { columns = []; 

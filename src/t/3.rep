@@ -12,13 +12,11 @@ COLUMN
     ALIAS busn
     NAME  "госномер"
     SORT ASC
-    %% FOLD YES
 END
 
 COLUMN
-    SOURCE vbus.driver_name
-    ALIAS driver
-    NAME  "водитель"
-    %% FOLD YES
+    SOURCE vbus.gos_number
+    ALIAS busn
+    NAME  "госномер"
+    SORT ASC
 END
-
