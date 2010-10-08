@@ -9,6 +9,7 @@ module B = Report_builder
 %token <string> IDENT
 %token DOT
 %token FIELD COLUMN END ALIAS NAME SOURCE FILTER SORT FOLD
+%token GROUP
 %token NONE YES NO NONE ASC DESC
 %token CONNECTION DATASOURCE TABLE
 %token TEMPLATE TEMPLATE_DIRS
@@ -46,6 +47,7 @@ column_attrib:
     | SOURCE col_ref             { B.with_col_source $2 }
     | FILTER IDENT               { failwith "FILTER is not supported yet" }
     | SORT   sort_args           { B.with_col_order $2 }
+    | GROUP                      { B.with_group }
     | FOLD fold_arg              { assert false }
 
 sort_args:

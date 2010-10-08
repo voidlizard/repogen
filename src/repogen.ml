@@ -28,7 +28,7 @@ let () =
 (*    in let _ = List.iter (fun a -> Printf.printf "%s\n" a) report.template_dirs*)
 
     in let sql = sql_of report
-(*    in let _ = print_endline sql*)
+    in let _ = print_endline sql
    
     in let cache = T.cache ()
 
@@ -36,7 +36,7 @@ let () =
         try
             let data = Db.with_connection (fun conn -> Db.select_all conn sql (fun ds -> list_of_ds report ds))
                                                                               (connection_of report)
-            in let model = Model.make (column_headers report) data []
+            in let model = Model.make (column_headers report) data [("SQL", sql)]
 
             in match report.template with 
                | Some(s) ->

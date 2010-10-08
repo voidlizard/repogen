@@ -11,7 +11,9 @@ type report_t = { columns: col_t list;
 and col_t = { col_name: string option;
               col_alias: string option;
               col_order: order_t option;
-              col_source: source_t }
+              col_source: source_t;
+              col_group: bool 
+            }
 and order_t = ASC | DESC
 and source_t = COLUMN of string * string
 and datasource_t = DS_TABLE of string
@@ -64,10 +66,13 @@ let sql_of rep =
     in let emit_column x = match x with
        | {col_source = cs; col_alias = a} -> Printf.sprintf "%s as %s" (fcn cs) (alias a)
     
-    in let emit_select ?(ordby = None) cols from    =
+    in let emit_select ?(groupby = None) ?(ordby = None) cols from    =
         let q = Printf.sprintf "select \n%s\nfrom %s" cols from
-        in match ordby with Some(c) -> q ^ (Printf.sprintf "\norder by\n%s" c)
-                            | _     -> q
+        in let q2 = match groupby with Some(c) -> q ^ (Printf.sprintf "\ngroup by\n%s" c)
+                                      | _      -> q
+        in let q3 = match ordby with Some(c) -> q2 ^ (Printf.sprintf "\norder by\n%s" c)
+                                    | _      -> q2
+        in q3
 
     in let ds_of_col rep = function {col_source = COLUMN(n, c)} ->
         try (n, List.assoc n rep.datasources)
@@ -91,6 +96,11 @@ let sql_of rep =
                     (List.map (fun {col_source=cs; col_order=o} -> (i1 (Printf.sprintf "%s%s" (fcn cs) (emit_ord_cnd o))) ) 
                               cols)
 
+    in let emit_groupby cols = 
+        String.join ",\n" 
+                    (List.map (fun {col_source=cs} -> (i1 (Printf.sprintf "%s" (fcn cs) )) ) 
+                              cols)
+
     in let emit_from rep = 
         let ds = List.map (fun x -> ds_of_col rep x) rep.columns |> List.unique
         in let _ = if List.length ds > 1 then failwith "Several datasources found. Joins are not supported yet"
@@ -104,8 +114,14 @@ let sql_of rep =
     in let ord_cols = (wrap_subquery_cols (List.filter (function  {col_order = Some(x)} -> true | _ -> false)
                                           rep.columns)
                                           sq)
-   
-    in let nested = List.length ord_cols > 0
+ 
+    in let group_cols = (wrap_subquery_cols (List.filter (fun x  -> x.col_group) rep.columns) sq)
+
+    in let groupby = if List.length group_cols > 0
+                     then Some(emit_groupby group_cols)
+                     else None
+
+    in let nested = List.length ord_cols > 0 || List.length group_cols > 0
 
     in let sel = emit_select cols (emit_from rep)
 
@@ -114,5 +130,6 @@ let sql_of rep =
        else emit_select (emit_select_cols (wrap_subquery_cols rep.columns sq)) 
                         (wrap_subquery sel sq) 
                         ~ordby:(Some(emit_ordby ord_cols))
+                        ~groupby:groupby
 
 

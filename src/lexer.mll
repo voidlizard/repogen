@@ -33,6 +33,7 @@ rule token = parse
     | "FILTER"        { FILTER }
     | "FOLD"          { FOLD }
     | "NAME"          { NAME }
+    | "GROUP"         { GROUP }
     | "SORT"          { SORT }
     | "SOURCE"        { SOURCE }
     | "YES"           { YES }

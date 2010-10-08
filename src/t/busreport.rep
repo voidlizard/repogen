@@ -16,6 +16,7 @@ COLUMN
     ALIAS busn
     NAME  "госномер"
     SORT ASC
+    GROUP
     %% FOLD YES
 END
 
@@ -23,6 +24,7 @@ COLUMN
     SOURCE v.driver_name
     ALIAS driver
     NAME  "водитель"
+    GROUP
     %% FOLD YES
 END
 

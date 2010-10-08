@@ -28,6 +28,8 @@ let with_col_name name col = { col with col_name = Some(name) }
 
 let with_col_order ord col = { col with col_order = ord }
 
+let with_group col = { col with col_group = true }
+
 let col_order_asc ()  = Some(ASC)
 
 let col_order_desc () = Some(DESC)
@@ -37,7 +39,8 @@ let with_column cattr report =
                              { col_name  = None;
                                col_alias = None;
                                col_order = None;
-                               col_source = COLUMN("","")
+                               col_source = COLUMN("","");
+                               col_group = false
                               }
                               cattr
     in { report with columns = col  :: report.columns }
@@ -52,7 +55,7 @@ let build_report e  =
                 datasources = [];
                 connections = [];
                 template = None;
-                template_dirs = ["."]
+                template_dirs = [""; "."]
               }
     in let r = List.fold_left (fun r f -> f r) rep e 
     in normalize_report { r with columns = List.rev r.columns }
