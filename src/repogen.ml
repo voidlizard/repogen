@@ -23,13 +23,12 @@ let list_of_ds report ds =
 let () =
     let report = parse_channel (Pervasives.stdin)
     
-    in let _ = List.iter (fun (a, DS_TABLE(n)) -> Printf.printf "%s %s\n" a n) report.datasources
-    in let _ = List.iter (fun (a, b) -> Printf.printf "%s %s\n" a b) report.connections
-    in let _ = List.iter (fun a -> Printf.printf "%s\n" a) report.template_dirs
-
+(*    in let _ = List.iter (fun (a, DS_TABLE(n)) -> Printf.printf "%s %s\n" a n) report.datasources*)
+(*    in let _ = List.iter (fun (a, b) -> Printf.printf "%s %s\n" a b) report.connections*)
+(*    in let _ = List.iter (fun a -> Printf.printf "%s\n" a) report.template_dirs*)
 
     in let sql = sql_of report
-    in let _ = print_endline sql
+(*    in let _ = print_endline sql*)
    
     in let cache = T.cache ()
 
@@ -37,7 +36,7 @@ let () =
         try
             let data = Db.with_connection (fun conn -> Db.select_all conn sql (fun ds -> list_of_ds report ds))
                                                                               (connection_of report)
-            in let model = Model.make (column_headers report) data [("message", "HELLO!")]
+            in let model = Model.make (column_headers report) data []
 
             in match report.template with 
                | Some(s) ->

@@ -40,7 +40,7 @@ and normalize_template dirs fname =
     match fname with 
     | Some(x) -> (let fnames = enum_file_names dirs x |> filt_by_permiss [Unix.F_OK; Unix.R_OK]
                  in match fnames with 
-                    | x :: _ -> Printf.printf "!!! %s\n" x; Some(x)
+                    | x :: _ -> Some(x)
                     | []     -> None)
     
     | None    -> None
