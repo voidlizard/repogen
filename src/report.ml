@@ -4,7 +4,7 @@ open Util
 
 type report_t = { columns: col_t list;
                   datasources: (string * datasource_t) list;
-                  connections: (string * connection_t) list
+                  connections: (string * connection_t) list;
                 }
 and col_t = { col_name: string option;
               col_alias: string option;
