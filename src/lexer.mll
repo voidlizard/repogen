@@ -51,6 +51,9 @@ rule token = parse
     | "FILE"          { FILE }
     | "TEMPORARY"     { TEMPORARY }
     | "POSTPROCESS"   { POSTPROCESS }
+    | "ECHO"          { ECHO }
+    | "BEFORE"        { BEFORE }
+    | "AFTER"         { AFTER }
     | "."             { DOT }
     | ident           { IDENT (lexeme lexbuf) }
 

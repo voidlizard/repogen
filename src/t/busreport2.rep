@@ -14,6 +14,12 @@ OUTPUT TEMPORARY "REPOGEN" ".tex"
 POSTPROCESS "/usr/bin/pdflatex -output-directory=/tmp/ -interaction=batchmode ${OUTPUT} > /dev/null" %% PASS ONE
 POSTPROCESS "/usr/bin/pdflatex -output-directory=/tmp/ -interaction=batchmode ${OUTPUT}  > /dev/null" %% PASS TWO
 
+ECHO "***** JOPA KITA PECHEN TRESKI ********"
+ECHO "${OUTPUT}"
+ECHO "${SQL}"
+
+ECHO AFTER " *** DONE *** "
+
 DATASOURCE TABLE
     ALIAS  v
     SOURCE vf_report

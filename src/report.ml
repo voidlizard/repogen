@@ -8,7 +8,9 @@ type report_t = { columns: col_t list;
                   template: string option;
                   template_dirs: string list;
                   output: output_t;
-                  postprocess: string list
+                  pre_actions:  action_t list;
+                  post_actions: action_t list;
+                  vars: (string * varfun_t) list
                 }
 and col_t = { col_name: string option;
               col_alias: string option;
@@ -21,6 +23,9 @@ and source_t = COLUMN of string * string
 and datasource_t = DS_TABLE of string
 and connection_t = string
 and output_t = STDOUT | FILE of string
+and action_when_t = BEFORE | AFTER
+and action_t = ( report_t -> report_t )
+and varfun_t = ( report_t -> string )
 
 let ident i s = Printf.sprintf "%s %s" i s
 
@@ -59,9 +64,10 @@ let column_headers report =
 
 let connection_of r = snd (List.hd r.connections)
 
-let metavars report = 
-    ("OUTPUT", match report.output with STDOUT -> "stdout" | FILE(s) -> s)
-    :: []
+let execute_actions t report = 
+    match t with 
+    | BEFORE -> List.fold_left (fun acc x -> x acc) report report.pre_actions
+    | AFTER  -> List.fold_left (fun acc x -> x acc) report report.post_actions
 
 let sql_of rep =
     let idnt = "   "
@@ -139,4 +145,7 @@ let sql_of rep =
                         ~ordby:(Some(emit_ordby ord_cols))
                         ~groupby:groupby
 
+
+let metavars report =
+    List.map ( fun (n,f) -> (n, f report) ) report.vars
 

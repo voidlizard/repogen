@@ -2,6 +2,8 @@ open Report
 open ExtList
 open ExtString
 
+module R = Report
+
 type ds_tbl_def = { ds_alias: string; ds_src: string }
 
 let datasource_source source ds = { ds with ds_src = source }
@@ -60,11 +62,22 @@ let with_output_temp ?prefix:(p="repogen") ?suffix:(s=".out") () report =
     { report with output = FILE((Filename.temp_file p s)) }
 
 let with_postprocess s report = 
-    { report with postprocess = s :: report.postprocess }
 
-let expand_postprocess report = 
-    let mv = Report.metavars report
-    in { report with postprocess = List.map (fun x -> Stmpl.parse_string x mv) report.postprocess }
+    let pp r =
+        let cmd = Stmpl.parse_string s (R.metavars report)
+        in let _ = print_endline cmd
+        in Unix.system cmd; r
+
+    in { report with post_actions = pp :: report.post_actions }
+
+let with_echo w s r =
+    let mv = R.metavars 
+    in let echo = (fun r' -> print_endline (Stmpl.parse_string s (mv r')); r')
+    in match w with 
+    | R.BEFORE -> { r with pre_actions  = echo :: r.pre_actions  } 
+    | R.AFTER  -> { r with post_actions = echo :: r.post_actions  } 
+
+let populate_vars report = report
 
 let build_report e  = 
     let rep = { columns = []; 
@@ -73,11 +86,16 @@ let build_report e  =
                 template = None;
                 template_dirs = [""; "."];
                 output = STDOUT;
-                postprocess = []
+                pre_actions = [];
+                post_actions = [];
+                vars =  ("SQL", (fun r -> try sql_of r with _ -> ""))
+                     :: ("OUTPUT", (fun r -> match r.output with STDOUT -> "stdout" | FILE(s) -> s))
+                     :: []
               }
     in let r = List.fold_left (fun r f -> f r) rep e 
-    in expand_postprocess ( normalize_report { r with columns = List.rev r.columns;
-                                                      postprocess = List.rev r.postprocess
-                                             })
+    in populate_vars ( normalize_report { r with columns = List.rev r.columns;
+                                                 pre_actions = List.rev r.pre_actions;
+                                                 post_actions = List.rev r.post_actions
+                                        })
 
 

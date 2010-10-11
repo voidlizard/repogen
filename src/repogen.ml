@@ -26,15 +26,16 @@ let dump_output report out =
 
 let () =
     let report = parse_channel (Pervasives.stdin)
-    in let sql = sql_of report
 
     in let cache = T.cache ()
 
-    in let _ = List.iter prerr_endline report.postprocess
-
     in 
         try
-            let data = Db.with_connection (fun conn -> Db.select_all conn sql (fun ds -> list_of_ds report ds))
+            let report = execute_actions BEFORE report
+            
+            in let sql = sql_of report
+            
+            in let data = Db.with_connection (fun conn -> Db.select_all conn sql (fun ds -> list_of_ds report ds))
                                                                               (connection_of report)
             in let model = Model.make (column_headers report) data ([("SQL", sql)] @ (metavars report))
 
@@ -42,7 +43,7 @@ let () =
                | Some(s) ->
                    let tmpl  = T.from_file cache s
                    in let () = dump_output report (T.render_string tmpl model)
-                   in List.iter ( fun cmd -> ignore(Unix.system cmd) ) report.postprocess
+                   in ignore (execute_actions AFTER report)
                | None -> ()
             
         with Error e -> prerr_endline (string_of_error e)

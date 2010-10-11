@@ -1,6 +1,7 @@
 %{
 
 module B = Report_builder
+module R = Report
 
 %}
 
@@ -14,7 +15,8 @@ module B = Report_builder
 %token CONNECTION DATASOURCE TABLE
 %token TEMPLATE TEMPLATE_DIRS
 %token OUTPUT FILE TEMPORARY STDOUT
-%token POSTPROCESS
+%token POSTPROCESS ECHO
+%token BEFORE AFTER
 %token EOF
 
 %start toplevel
@@ -38,6 +40,7 @@ entry:
     | datasource            { B.with_datasource $1 }
     | output                { $1 }
     | postprocess           { $1 }
+    | misc_actions          { $1 }
 
 column:
     | COLUMN column_attribs END  { $2 }
@@ -96,5 +99,12 @@ output:
 
 postprocess:
     | POSTPROCESS STRING             { B.with_postprocess $2 }
+
+
+misc_actions:
+    | ECHO BEFORE STRING             { B.with_echo R.BEFORE $3 }
+    | ECHO AFTER  STRING             { B.with_echo R.AFTER  $3 }
+    | ECHO STRING                    { B.with_echo R.BEFORE $2 }
+
 
 %%
