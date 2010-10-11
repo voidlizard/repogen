@@ -15,10 +15,15 @@ let parse_channel ch =
   in let ast = Parser.toplevel Lexer.token lex
   in ast
 
-
 let list_of_ds report ds =
     let hdr = (column_headers report)
     in List.map ( fun x -> List.map2 (fun (a,_) v -> (a,v)) hdr x) ds
+
+let dump_output report out = 
+    match report.output with
+    | STDOUT    -> failwith "DUMP TO STDOUT"
+    | FILE(s)   -> failwith "DUMP TO FILE"
+    | TEMP_FILE -> failwith "DUMP TO TEMP_FILE"
 
 let () =
     let report = parse_channel (Pervasives.stdin)
@@ -28,8 +33,12 @@ let () =
 (*    in let _ = List.iter (fun a -> Printf.printf "%s\n" a) report.template_dirs*)
 
     in let sql = sql_of report
-    in let _ = print_endline sql
-   
+(*    in let _ = print_endline sql*)
+
+    in let tmp_file =  Filename.temp_file "repogen" "template"
+
+    in let _ = Printf.printf "TEMP %s\n" tmp_file
+
     in let cache = T.cache ()
 
     in 
@@ -41,8 +50,7 @@ let () =
             in match report.template with 
                | Some(s) ->
                    let tmpl  = T.from_file cache s
-                   in let s = T.render_string tmpl model 
-                   in print_endline s
+                   in dump_output report (T.render_string tmpl model) 
                | None -> ()
             
         with Error e -> prerr_endline (string_of_error e)

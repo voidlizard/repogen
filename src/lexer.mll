@@ -46,6 +46,10 @@ rule token = parse
     | "CONNECTION"    { CONNECTION }
     | "DATASOURCE"    { DATASOURCE }
     | "TABLE"         { TABLE }
+    | "OUTPUT"        { OUTPUT }
+    | "STDOUT"        { STDOUT }
+    | "FILE"          { FILE }
+    | "TEMPORARY"     { TEMPORARY }
     | "."             { DOT }
     | ident           { IDENT (lexeme lexbuf) }
 

@@ -6,7 +6,8 @@ type report_t = { columns: col_t list;
                   datasources: (string * datasource_t) list;
                   connections: (string * connection_t) list;
                   template: string option;
-                  template_dirs: string list
+                  template_dirs: string list;
+                  output: output_t
                 }
 and col_t = { col_name: string option;
               col_alias: string option;
@@ -18,6 +19,7 @@ and order_t = ASC | DESC
 and source_t = COLUMN of string * string
 and datasource_t = DS_TABLE of string
 and connection_t = string
+and output_t = STDOUT | FILE of string | TEMP_FILE
 
 let ident i s = Printf.sprintf "%s %s" i s
 

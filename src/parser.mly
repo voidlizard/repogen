@@ -13,6 +13,7 @@ module B = Report_builder
 %token NONE YES NO NONE ASC DESC
 %token CONNECTION DATASOURCE TABLE
 %token TEMPLATE TEMPLATE_DIRS
+%token OUTPUT FILE TEMPORARY STDOUT
 %token EOF
 
 %start toplevel
@@ -34,6 +35,7 @@ entry:
     | column                { B.with_column $1 }
     | connection            { B.with_connection $1 }
     | datasource            { B.with_datasource $1 }
+    | output                { $1 }
 
 column:
     | COLUMN column_attribs END  { $2 }
@@ -82,5 +84,10 @@ datasource_args:                 { [] }
 datasource_arg:
     | ALIAS  IDENT                { B.datasource_alias $2  }
     | SOURCE IDENT                { B.datasource_source $2 }
+
+output:
+    | OUTPUT TEMPORARY            { B.with_output_temp () }
+    | OUTPUT  STDOUT              { B.with_output_stdout () }
+    | OUTPUT FILE STRING          { B.with_output_file $3 }
 
 %%

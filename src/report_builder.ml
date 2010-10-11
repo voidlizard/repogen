@@ -50,12 +50,22 @@ let with_template tpl report = { report with template = Some(tpl) }
 let with_template_dirs d report = 
     { report with template_dirs = report.template_dirs @ List.map String.strip (String.nsplit d ":") }
 
+let with_output_stdout () report = 
+    { report with output = STDOUT }
+
+let with_output_file f report = 
+    { report with output = FILE(f) }
+
+let with_output_temp () report = 
+    { report with output = TEMP_FILE }
+
 let build_report e  = 
     let rep = { columns = []; 
                 datasources = [];
                 connections = [];
                 template = None;
-                template_dirs = [""; "."]
+                template_dirs = [""; "."];
+                output = STDOUT
               }
     in let r = List.fold_left (fun r f -> f r) rep e 
     in normalize_report { r with columns = List.rev r.columns }
