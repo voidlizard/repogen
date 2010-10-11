@@ -21,9 +21,8 @@ let list_of_ds report ds =
 
 let dump_output report out = 
     match report.output with
-    | STDOUT    -> failwith "DUMP TO STDOUT"
-    | FILE(s)   -> failwith "DUMP TO FILE"
-    | TEMP_FILE -> failwith "DUMP TO TEMP_FILE"
+    | STDOUT    -> output_string Pervasives.stdout out
+    | FILE(s)   -> Std.output_file s out
 
 let () =
     let report = parse_channel (Pervasives.stdin)
@@ -34,10 +33,6 @@ let () =
 
     in let sql = sql_of report
 (*    in let _ = print_endline sql*)
-
-    in let tmp_file =  Filename.temp_file "repogen" "template"
-
-    in let _ = Printf.printf "TEMP %s\n" tmp_file
 
     in let cache = T.cache ()
 

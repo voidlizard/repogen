@@ -86,8 +86,9 @@ datasource_arg:
     | SOURCE IDENT                { B.datasource_source $2 }
 
 output:
-    | OUTPUT TEMPORARY            { B.with_output_temp () }
-    | OUTPUT  STDOUT              { B.with_output_stdout () }
-    | OUTPUT FILE STRING          { B.with_output_file $3 }
+    | OUTPUT TEMPORARY               { B.with_output_temp () }
+    | OUTPUT TEMPORARY STRING STRING { B.with_output_temp ~prefix:$3 ~suffix:$4 () }
+    | OUTPUT STDOUT                  { B.with_output_stdout () }
+    | OUTPUT FILE STRING             { B.with_output_file $3 }
 
 %%

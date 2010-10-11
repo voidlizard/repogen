@@ -19,7 +19,7 @@ and order_t = ASC | DESC
 and source_t = COLUMN of string * string
 and datasource_t = DS_TABLE of string
 and connection_t = string
-and output_t = STDOUT | FILE of string | TEMP_FILE
+and output_t = STDOUT | FILE of string
 
 let ident i s = Printf.sprintf "%s %s" i s
 

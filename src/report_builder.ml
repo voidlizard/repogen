@@ -56,8 +56,8 @@ let with_output_stdout () report =
 let with_output_file f report = 
     { report with output = FILE(f) }
 
-let with_output_temp () report = 
-    { report with output = TEMP_FILE }
+let with_output_temp ?prefix:(p="repogen") ?suffix:(s=".out") () report = 
+    { report with output = FILE((Filename.temp_file p s)) }
 
 let build_report e  = 
     let rep = { columns = []; 
