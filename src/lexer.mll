@@ -50,6 +50,7 @@ rule token = parse
     | "STDOUT"        { STDOUT }
     | "FILE"          { FILE }
     | "TEMPORARY"     { TEMPORARY }
+    | "POSTPROCESS"   { POSTPROCESS }
     | "."             { DOT }
     | ident           { IDENT (lexeme lexbuf) }
 

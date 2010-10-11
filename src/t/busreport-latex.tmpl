@@ -1,0 +1,28 @@
+\documentclass[a4paper,9pt]{article}
+\usepackage[T2A]{fontenc}
+\usepackage[utf8]{inputenc} % любая желаемая кодировка
+\usepackage[english,russian]{babel}
+\usepackage{longtable}
+\usepackage[landscape]{geometry}
+
+\begin{document}
+
+\texttt{ ${OUTPUT} } 
+
+\begin{center}
+    \begin{landscape}
+    \begin{longtable}{ |p{4cm}|p{13cm}| }
+    \hline
+    ${header.busn} & ${header.driver} \\ \hline
+    #foreach (row in rows)
+    ${row.busn} & ${row.driver} \\ \hline
+    #end
+    \hline
+    \end{longtable}
+    \end{landscape}
+\end{center}
+
+
+\end{document}
+
+

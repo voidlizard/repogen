@@ -59,15 +59,25 @@ let with_output_file f report =
 let with_output_temp ?prefix:(p="repogen") ?suffix:(s=".out") () report = 
     { report with output = FILE((Filename.temp_file p s)) }
 
+let with_postprocess s report = 
+    { report with postprocess = s :: report.postprocess }
+
+let expand_postprocess report = 
+    let mv = Report.metavars report
+    in { report with postprocess = List.map (fun x -> Stmpl.parse_string x mv) report.postprocess }
+
 let build_report e  = 
     let rep = { columns = []; 
                 datasources = [];
                 connections = [];
                 template = None;
                 template_dirs = [""; "."];
-                output = STDOUT
+                output = STDOUT;
+                postprocess = []
               }
     in let r = List.fold_left (fun r f -> f r) rep e 
-    in normalize_report { r with columns = List.rev r.columns }
+    in expand_postprocess ( normalize_report { r with columns = List.rev r.columns;
+                                                      postprocess = List.rev r.postprocess
+                                             })
 
 

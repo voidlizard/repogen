@@ -7,7 +7,8 @@ type report_t = { columns: col_t list;
                   connections: (string * connection_t) list;
                   template: string option;
                   template_dirs: string list;
-                  output: output_t
+                  output: output_t;
+                  postprocess: string list
                 }
 and col_t = { col_name: string option;
               col_alias: string option;
@@ -57,6 +58,10 @@ let column_headers report =
              report.columns
 
 let connection_of r = snd (List.hd r.connections)
+
+let metavars report = 
+    ("OUTPUT", match report.output with STDOUT -> "stdout" | FILE(s) -> s)
+    :: []
 
 let sql_of rep =
     let idnt = "   "

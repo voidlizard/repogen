@@ -14,6 +14,7 @@ module B = Report_builder
 %token CONNECTION DATASOURCE TABLE
 %token TEMPLATE TEMPLATE_DIRS
 %token OUTPUT FILE TEMPORARY STDOUT
+%token POSTPROCESS
 %token EOF
 
 %start toplevel
@@ -36,6 +37,7 @@ entry:
     | connection            { B.with_connection $1 }
     | datasource            { B.with_datasource $1 }
     | output                { $1 }
+    | postprocess           { $1 }
 
 column:
     | COLUMN column_attribs END  { $2 }
@@ -90,5 +92,9 @@ output:
     | OUTPUT TEMPORARY STRING STRING { B.with_output_temp ~prefix:$3 ~suffix:$4 () }
     | OUTPUT STDOUT                  { B.with_output_stdout () }
     | OUTPUT FILE STRING             { B.with_output_file $3 }
+
+
+postprocess:
+    | POSTPROCESS STRING             { B.with_postprocess $2 }
 
 %%
