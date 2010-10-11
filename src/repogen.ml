@@ -26,13 +26,7 @@ let dump_output report out =
 
 let () =
     let report = parse_channel (Pervasives.stdin)
-    
-(*    in let _ = List.iter (fun (a, DS_TABLE(n)) -> Printf.printf "%s %s\n" a n) report.datasources*)
-(*    in let _ = List.iter (fun (a, b) -> Printf.printf "%s %s\n" a b) report.connections*)
-(*    in let _ = List.iter (fun a -> Printf.printf "%s\n" a) report.template_dirs*)
-
     in let sql = sql_of report
-(*    in let _ = print_endline sql*)
 
     in let cache = T.cache ()
 
