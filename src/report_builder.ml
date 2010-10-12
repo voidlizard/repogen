@@ -64,7 +64,7 @@ let with_output_temp ?prefix:(p="repogen") ?suffix:(s=".out") () report =
 let with_postprocess s report = 
 
     let pp r =
-        let cmd = Stmpl.parse_string s (R.metavars report)
+        let cmd = Stmpl.parse_string s (R.metavars r)
         in let _ = print_endline cmd
         in Unix.system cmd; r
 

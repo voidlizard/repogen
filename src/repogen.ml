@@ -59,14 +59,18 @@ let () =
                          ] (fun x -> opts.opt_filename <- Some(x) ) "Usage:"
 
 
-    in let report = with_options opts (report_of opts)
+    in let report' = with_options opts (report_of opts)
 
     in let cache = T.cache ()
 
     in 
         try
-            let report = execute_actions BEFORE report
-            
+            let report = execute_actions BEFORE report'
+
+(*            in let _ = match report.output with *)
+(*            | STDOUT  -> failwith "STDOUT!"*)
+(*            | FILE(x) -> failwith (Printf.sprintf "FILE %s" x)*)
+
             in let sql = sql_of report
             
             in let data = Db.with_connection (fun conn -> Db.select_all conn sql (fun ds -> list_of_ds report ds))
