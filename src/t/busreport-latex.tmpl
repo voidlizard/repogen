@@ -1,25 +1,21 @@
-\documentclass[a4paper,9pt]{article}
+\documentclass[a4paper,12pt]{article}
 \usepackage[T2A]{fontenc}
 \usepackage[utf8]{inputenc} % любая желаемая кодировка
 \usepackage[english,russian]{babel}
+%% \usepackage[landscape]{geometry}
 \usepackage{longtable}
-\usepackage[landscape]{geometry}
 
 \begin{document}
 
 \texttt{ ${OUTPUT} } 
 
 \begin{center}
-    \begin{landscape}
-    \begin{longtable}{ |p{4cm}|p{13cm}| }
-    \hline
-    ${header.busn} & ${header.driver} \\ \hline
+    \begin{longtable}{ ll }
+    ${header.busn} & ${header.driver} \\ 
     #foreach (row in rows)
-    ${row.busn} & ${row.driver} \\ \hline
+    ${row.busn} & ${row.driver} \\ 
     #end
-    \hline
     \end{longtable}
-    \end{landscape}
 \end{center}
 
 

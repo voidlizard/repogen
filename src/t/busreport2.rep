@@ -15,7 +15,7 @@ POSTPROCESS "/usr/bin/pdflatex -output-directory=/tmp/ -interaction=batchmode ${
 POSTPROCESS "/usr/bin/pdflatex -output-directory=/tmp/ -interaction=batchmode ${OUTPUT}  > /dev/null" %% PASS TWO
 
 ECHO "***** JOPA KITA PECHEN TRESKI ********"
-ECHO "${OUTPUT}"
+ECHO "OUTPUT ${OUTPUT}"
 ECHO "${SQL}"
 
 ECHO AFTER " *** DONE *** "
