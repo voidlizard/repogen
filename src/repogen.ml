@@ -32,6 +32,7 @@ let dump_output report out =
 
 type opt = { mutable opt_filename: string option;
              mutable opt_output: output_t option;
+             mutable opt_tmpl: string option
            }
 
 let report_of = function
@@ -44,17 +45,22 @@ let with_options opts rep  =
                | None    -> r 
                | Some(x) -> { r with output = x }
 
+   in let tmpl r = match opts.opt_tmpl with
+                  | None -> r
+                  | Some(x) -> { r with template = Some(x) }
+
    in let fns = 
-        out :: []
+        out :: tmpl :: []
 
    in List.fold_left (fun acc f -> f acc) rep fns
 
 
 let () =
-    let opts = { opt_filename = None; opt_output = None }
+    let opts = { opt_filename = None; opt_output = None; opt_tmpl = None }
     in let _ = Arg.parse [
                             ("--out-file",   Arg.String(fun s -> opts.opt_output <- Some(FILE(s))) , "set output file name");
                             ("--out-stdout", Arg.Unit(fun ()  -> opts.opt_output <- Some(STDOUT) ) , "set output file to STDOUT");
+                            ("--template",   Arg.String(fun s  -> opts.opt_tmpl <- Some(s) ) , "set template");
                             ("--define",     Arg.String(fun s -> ()) , "define variable NAME=VALUE");
                          ] (fun x -> opts.opt_filename <- Some(x) ) "Usage:"
 

@@ -89,7 +89,8 @@ let build_report e  =
                 pre_actions = [];
                 post_actions = [];
                 vars =  ("SQL", (fun r -> try sql_of r with _ -> ""))
-                     :: ("OUTPUT", (fun r -> match r.output with STDOUT -> "stdout" | FILE(s) -> s))
+                     :: ("OUTPUT",   (fun r -> match r.output with STDOUT -> "stdout" | FILE(s) -> s))
+                     :: ("TEMPLATE", (fun r -> match r.template with Some(x) -> x | _ -> ""))
                      :: []
               }
     in let r = List.fold_left (fun r f -> f r) rep e 
