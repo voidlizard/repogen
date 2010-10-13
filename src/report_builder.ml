@@ -82,6 +82,11 @@ let with_echo w s r =
     | R.AFTER  -> { r with post_actions = echo :: r.post_actions  } 
 
 
+let with_abort w r = 
+    let abrt = (fun r' -> failwith "ABORTED")
+    in match w with
+    | R.BEFORE -> { r with pre_actions  = abrt :: r.pre_actions }
+    | R.AFTER  -> { r with post_actions = abrt :: r.post_actions }
 
 let populate_vars report = report
 

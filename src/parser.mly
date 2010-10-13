@@ -17,7 +17,7 @@ module R = Report
 %token CONNECTION DATASOURCE TABLE
 %token TEMPLATE TEMPLATE_DIRS
 %token OUTPUT FILE TEMPORARY STDOUT
-%token POSTPROCESS ECHO
+%token POSTPROCESS ECHO ABORT
 %token BEFORE AFTER
 %token EQ NE LT GT LE GE 
 %token OR AND IN BETWEEN  
@@ -110,6 +110,9 @@ misc_actions:
     | ECHO BEFORE STRING             { B.with_echo R.BEFORE $3 }
     | ECHO AFTER  STRING             { B.with_echo R.AFTER  $3 }
     | ECHO STRING                    { B.with_echo R.BEFORE $2 }
+    | ABORT                          { B.with_abort R.BEFORE }
+    | ABORT BEFORE                   { B.with_abort R.BEFORE }
+    | ABORT AFTER                    { B.with_abort R.AFTER }
 
 filter:
     | FILTER filter_eq               { $2 }

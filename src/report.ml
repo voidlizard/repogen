@@ -3,6 +3,7 @@ open ExtString
 open Util
 
 module P = Printf
+module L = List
 
 type report_t = { columns: col_t list;
                   datasources: (string * datasource_t) list;
@@ -82,14 +83,25 @@ let sql_of rep =
 
     in let emit_column x = match x with
        | {col_source = cs; col_alias = a} -> P.sprintf "%s as %s" (fcn cs) (alias a)
-    
-    in let emit_select ?(groupby = None) ?(ordby = None) cols from    =
-        let q = P.sprintf "select \n%s\nfrom %s" cols from
-        in let q2 = match groupby with Some(c) -> q ^ (P.sprintf "\ngroup by\n%s" c)
-                                      | _      -> q
-        in let q3 = match ordby with Some(c) -> q2 ^ (P.sprintf "\norder by\n%s" c)
-                                    | _      -> q2
-        in q3
+   
+
+    in let rec emit_select ?groupby:(g = None)
+                           ?ordby:(o = None) 
+                           ?where:(w = None) 
+                           cols f =
+        select cols
+               (from f)
+               (where w)
+               (group_by g)
+               (order_by o)
+
+    and from f = P.sprintf "from %s" f
+    and group_by = function Some(g) -> Some(P.sprintf "group by\n%s" g) | None -> None
+    and order_by = function Some(g) -> Some(P.sprintf "order by\n%s" g) | None -> None
+    and where    = function Some(g) -> Some(P.sprintf "where\n%s" g)    | None -> None
+    and select c f w g o = List.fold_left (fun q p -> match p with Some(s) -> q @ [s] | _ -> q)
+                           ["select"; c ; f] [w;g;o]
+                           |> String.join "\n"
 
     in let ds_of_col rep = function {col_source = COLUMN(n, c)} ->
         try (n, List.assoc n rep.datasources)
@@ -128,13 +140,13 @@ let sql_of rep =
     in let emit_where ?idnt:(i="") rep =
         let flts = List.fold_left ( fun acc c -> match c.col_filter with 
                                                | None -> acc 
-                                               | Some(x) -> (x, alias c.col_alias) :: acc
+                                               | Some(x) -> (x, c.col_source) :: acc
                                   ) [] rep.columns
         in let rec emit cnd = function
-            | (LIKE(s), a) :: xs -> emit ((P.sprintf "%s LIKE %s" a s)::cnd) xs
+            | (LIKE(s), c) :: xs -> emit ((P.sprintf "%s like '%s'" (fcn c) s)::cnd) xs
             | []                 -> cnd
-        in let cnd = String.join "\nand" (emit [] flts) 
-        in (P.sprintf "where %s" cnd)
+        in let cnd = String.join "\nand " (emit [] flts) 
+        in (P.sprintf "%s" cnd)
 
 
     in let cols  = emit_select_cols rep.columns
@@ -153,11 +165,13 @@ let sql_of rep =
 
     in let nested = List.length ord_cols > 0 || List.length group_cols > 0
 
-    in let sel = emit_select cols (emit_from rep)
+    in let flt = emit_where rep
 
-    in let _ = List.iter (fun c -> P.printf "FILT %s %s\n" (Option.get c.col_alias) (match c.col_filter with None -> "none" | _ -> "some filter") ) rep.columns 
+    in let filter = if String.length flt > 0
+                    then Some(flt)
+                    else None
 
-    in let _ = P.printf "WHERE %s\n" (emit_where rep)
+    in let sel = emit_select cols (emit_from rep) ~where:filter
 
     in if not nested 
        then sel 

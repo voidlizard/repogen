@@ -54,6 +54,7 @@ rule token = parse
     | "TEMPORARY"     { TEMPORARY }
     | "POSTPROCESS"   { POSTPROCESS }
     | "ECHO"          { ECHO }
+    | "ABORT"         { ABORT }
     | "BEFORE"        { BEFORE }
     | "AFTER"         { AFTER }
     | "."             { DOT }

@@ -7,17 +7,20 @@ TEMPLATE_DIRS "t:/home/dmz/templates"
 TEMPLATE "busreport-latex.tmpl"
 
 %% OUTPUT TEMPORARY 
-OUTPUT TEMPORARY "REPOGEN" ".tex" 
+%% OUTPUT TEMPORARY "REPOGEN" ".tex" 
 
-%% OUTPUT STDOUT
+OUTPUT STDOUT
 
 %% POSTPROCESS "/usr/bin/pdflatex -output-directory=/tmp/ -interaction=batchmode ${OUTPUT} > /dev/null" %% PASS ONE
 %% POSTPROCESS "/usr/bin/pdflatex -output-directory=/tmp/ -interaction=batchmode ${OUTPUT}  > /dev/null" %% PASS TWO
 
 ECHO "***** JOPA KITA PECHEN TRESKI ********"
 ECHO "OUTPUT ${OUTPUT}"
+ECHO " ----- SQL -----"
 ECHO "${SQL}"
+ECHO " --------------- "
 ECHO "TEMPLATE ${TEMPLATE}"
+%% ABORT
 
 ECHO AFTER " *** DONE *** "
 
@@ -39,6 +42,7 @@ COLUMN
     SOURCE v.issue_year
     ALIAS year
     NAME  "год выпуска"
+    SORT DESC
     %% FOLD YES
 END
 
@@ -46,6 +50,7 @@ COLUMN
     SOURCE v.driver_name
     ALIAS driver
     NAME  "водитель"
+    %% FILTER LIKE("%ПУПКИН%")
     %% FOLD YES
 END
 
