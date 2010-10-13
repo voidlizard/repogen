@@ -5,8 +5,10 @@ module R = Report
 
 %}
 
+%token OBR CBR
 %token <int> INT
 %token <string> STRING
+%token <string> NUMBER
 %token <string> IDENT
 %token DOT
 %token FIELD COLUMN END ALIAS NAME SOURCE FILTER SORT FOLD
@@ -17,6 +19,10 @@ module R = Report
 %token OUTPUT FILE TEMPORARY STDOUT
 %token POSTPROCESS ECHO
 %token BEFORE AFTER
+%token EQ NE LT GT LE GE 
+%token OR AND IN BETWEEN  
+%token LIKE
+
 %token EOF
 
 %start toplevel
@@ -52,7 +58,7 @@ column_attrib:
     | ALIAS  IDENT               { B.with_col_alias $2 }
     | NAME   STRING              { B.with_col_name $2  }
     | SOURCE col_ref             { B.with_col_source $2 }
-    | FILTER IDENT               { failwith "FILTER is not supported yet" }
+    | filter                     { $1 }
     | SORT   sort_args           { B.with_col_order $2 }
     | GROUP                      { B.with_group }
     | FOLD fold_arg              { assert false }
@@ -96,7 +102,6 @@ output:
     | OUTPUT STDOUT                  { B.with_output_stdout () }
     | OUTPUT FILE STRING             { B.with_output_file $3 }
 
-
 postprocess:
     | POSTPROCESS STRING             { B.with_postprocess $2 }
 
@@ -106,5 +111,27 @@ misc_actions:
     | ECHO AFTER  STRING             { B.with_echo R.AFTER  $3 }
     | ECHO STRING                    { B.with_echo R.BEFORE $2 }
 
+filter:
+    | FILTER filter_eq               { $2 }
+
+filter_eq:
+    | EQ filt_single_arg             { assert false }
+    | NE filt_single_arg             { assert false }
+    | LT filt_single_arg             { assert false }
+    | GT filt_single_arg             { assert false }
+    | LE filt_single_arg             { assert false }
+    | GE filt_single_arg             { assert false }
+    | LIKE filt_like_arg             { B.with_col_filt (R.LIKE($2)) }
+
+filt_single_arg:
+    | OBR filt_arg CBR               { assert false }
+
+
+filt_arg:
+    | NUMBER                         { assert false }
+    | STRING                         { assert false }
+
+filt_like_arg:
+    | OBR STRING CBR                 { $2 }
 
 %%

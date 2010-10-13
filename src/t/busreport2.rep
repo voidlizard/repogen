@@ -11,8 +11,8 @@ OUTPUT TEMPORARY "REPOGEN" ".tex"
 
 %% OUTPUT STDOUT
 
-POSTPROCESS "/usr/bin/pdflatex -output-directory=/tmp/ -interaction=batchmode ${OUTPUT} > /dev/null" %% PASS ONE
-POSTPROCESS "/usr/bin/pdflatex -output-directory=/tmp/ -interaction=batchmode ${OUTPUT}  > /dev/null" %% PASS TWO
+%% POSTPROCESS "/usr/bin/pdflatex -output-directory=/tmp/ -interaction=batchmode ${OUTPUT} > /dev/null" %% PASS ONE
+%% POSTPROCESS "/usr/bin/pdflatex -output-directory=/tmp/ -interaction=batchmode ${OUTPUT}  > /dev/null" %% PASS TWO
 
 ECHO "***** JOPA KITA PECHEN TRESKI ********"
 ECHO "OUTPUT ${OUTPUT}"
@@ -31,6 +31,7 @@ COLUMN
     ALIAS busn
     NAME  "госномер"
     SORT ASC
+    FILTER LIKE("%780%")
     %% FOLD YES
 END
 
@@ -52,6 +53,7 @@ COLUMN
     SOURCE v.speeding
     ALIAS speeding
     NAME  "превышения скорости"
+    %% FILTER EQ("+")
     %% FOLD YES
 END
 

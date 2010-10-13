@@ -32,9 +32,12 @@ let with_col_order ord col = { col with col_order = ord }
 
 let with_group col = { col with col_group = true }
 
+let with_col_filt flt col = { col with col_filter = Some(flt) }
+
 let col_order_asc ()  = Some(ASC)
 
 let col_order_desc () = Some(DESC)
+
 
 let with_column cattr report = 
     let col = List.fold_left (fun c f -> f c)
@@ -42,7 +45,8 @@ let with_column cattr report =
                                col_alias = None;
                                col_order = None;
                                col_source = COLUMN("","");
-                               col_group = false
+                               col_group = false;
+                               col_filter = None
                               }
                               cattr
     in { report with columns = col  :: report.columns }
@@ -76,6 +80,8 @@ let with_echo w s r =
     in match w with 
     | R.BEFORE -> { r with pre_actions  = echo :: r.pre_actions  } 
     | R.AFTER  -> { r with post_actions = echo :: r.post_actions  } 
+
+
 
 let populate_vars report = report
 
