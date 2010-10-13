@@ -135,6 +135,6 @@ filt_arg:
     | STRING                         { assert false }
 
 filt_like_arg:
-    | OBR STRING CBR                 { $2 }
+    | OBR STRING CBR                 { B.string_constant $2 }
 
 %%

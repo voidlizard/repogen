@@ -2,8 +2,9 @@ open ExtList
 open ExtString
 open Util
 
-module P = Printf
-module L = List
+module P  = Printf
+module L  = List
+module DB = Db_pg
 
 type report_t = { columns: col_t list;
                   datasources: (string * datasource_t) list;
@@ -13,7 +14,8 @@ type report_t = { columns: col_t list;
                   output: output_t;
                   pre_actions:  action_t list;
                   post_actions: action_t list;
-                  vars: (string * varfun_t) list
+                  vars: (string * varfun_t) list;
+                  query_args: (string * val_t) list
                 }
 and col_t = { col_name: string option;
               col_alias: string option;
@@ -30,7 +32,8 @@ and output_t = STDOUT | FILE of string
 and action_when_t = BEFORE | AFTER
 and action_t = ( report_t -> report_t )
 and varfun_t = ( report_t -> string )
-and filt_op_t = LIKE of string
+and filt_op_t = LIKE of val_t
+and val_t = STR_CONST of string | VAR_REF of string
 
 let ident i s = P.sprintf "%s %s" i s
 
@@ -45,8 +48,9 @@ let filt_by_permiss perm fnames =
                            with Unix.Unix_error _ -> false ) fnames
 
 let rec normalize_report rep =
-    { rep with columns = normalize_columns rep.columns;
+    { rep with columns  = normalize_columns rep.columns;
                template = normalize_template rep.template_dirs rep.template }
+
 and normalize_columns cols = List.mapi normalize_column cols
 and normalize_column i  = function ({ col_alias = None } as c)  -> { c with col_alias = Some(P.sprintf "col%d" i) }
                                   |({ col_alias = Some _} as c) -> c
@@ -74,7 +78,12 @@ let execute_actions t report =
     | BEFORE -> List.fold_left (fun acc x -> x acc) report report.pre_actions
     | AFTER  -> List.fold_left (fun acc x -> x acc) report report.post_actions
 
-let sql_of rep =
+
+let str_of_val = function
+    | STR_CONST(s) -> s
+    | VAR_REF(s)   -> P.sprintf "${%s}" s
+
+let sql_of rep  =
     let idnt = "   "
     in let i1 = ident idnt
     in let alias x = try Option.get x with Option.No_value -> failwith "Alias is not defined"
@@ -143,7 +152,8 @@ let sql_of rep =
                                                | Some(x) -> (x, c.col_source) :: acc
                                   ) [] rep.columns
         in let rec emit cnd = function
-            | (LIKE(s), c) :: xs -> emit ((P.sprintf "%s like '%s'" (fcn c) s)::cnd) xs
+            | (LIKE(VAR_REF(s)), c)   :: xs -> emit ((P.sprintf "%s like ${%s}" (fcn c) s)::cnd) xs
+            | (LIKE(STR_CONST(s)), c) :: xs -> emit ((P.sprintf "%s like '%s'" (fcn c) s)::cnd) xs
             | []                 -> cnd
         in let cnd = String.join "\nand " (emit [] flts) 
         in (P.sprintf "%s" cnd)
@@ -181,6 +191,30 @@ let sql_of rep =
                         ~groupby:groupby
 
 
+let parametrized_sql report =
+    let sql = sql_of report
+    in let repl = List.mapi (fun i (n,v) -> (n, (DB.placeholder (i+1) n))) report.query_args
+    in let vals = List.map (fun (n,x) -> str_of_val x) report.query_args
+    in (Stmpl.parse_string sql repl, vals)
+
+let report_col_name col = 
+    match col.col_alias with 
+    | Some(x) -> x
+    | None -> ( match col.col_source with COLUMN(a,s) -> P.sprintf "%s_%s" a s )  
+
 let metavars report =
     List.map ( fun (n,f) -> (n, f report) ) report.vars
+
+let extract_query_args col =
+
+    let argn = P.sprintf "QUERY_ARG_%s" (String.uppercase (report_col_name col))
+
+    in let rec extract col = match col.col_filter with
+        | Some(LIKE(STR_CONST(s) as c)) as f  -> ([(argn, STR_CONST(s))],
+                                                  {col with col_filter = Some(LIKE(VAR_REF(argn)))})
+        | None                                -> ([], col)
+        | x                                   -> assert false
+    in extract col
+
+
 

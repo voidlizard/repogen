@@ -38,6 +38,7 @@ let col_order_asc ()  = Some(ASC)
 
 let col_order_desc () = Some(DESC)
 
+let string_constant s = STR_CONST(s)
 
 let with_column cattr report = 
     let col = List.fold_left (fun c f -> f c)
@@ -49,7 +50,9 @@ let with_column cattr report =
                                col_filter = None
                               }
                               cattr
-    in { report with columns = col  :: report.columns }
+    in let (args, col') = extract_query_args col
+    in { report with columns = col' :: report.columns;
+                     query_args = report.query_args @ args }
 
 let with_template tpl report = { report with template = Some(tpl) }
 
@@ -88,7 +91,9 @@ let with_abort w r =
     | R.BEFORE -> { r with pre_actions  = abrt :: r.pre_actions }
     | R.AFTER  -> { r with post_actions = abrt :: r.post_actions }
 
-let populate_vars report = report
+let populate_vars report = 
+    let v = List.map ( fun (n,v) -> (n, (fun r -> str_of_val (List.assoc n r.query_args)))) report.query_args
+    in { report with vars = report.vars @ v}
 
 let build_report e  = 
     let rep = { columns = []; 
@@ -99,6 +104,7 @@ let build_report e  =
                 output = STDOUT;
                 pre_actions = [];
                 post_actions = [];
+                query_args = [];
                 vars =  ("SQL", (fun r -> try sql_of r with _ -> ""))
                      :: ("OUTPUT",   (fun r -> match r.output with STDOUT -> "stdout" | FILE(s) -> s))
                      :: ("TEMPLATE", (fun r -> match r.template with Some(x) -> x | _ -> ""))
@@ -107,7 +113,7 @@ let build_report e  =
     in let r = List.fold_left (fun r f -> f r) rep e 
     in populate_vars ( normalize_report { r with columns = List.rev r.columns;
                                                  pre_actions = List.rev r.pre_actions;
-                                                 post_actions = List.rev r.post_actions
+                                                 post_actions = List.rev r.post_actions;
                                         })
 
 

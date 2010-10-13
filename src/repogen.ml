@@ -73,13 +73,9 @@ let () =
         try
             let report = execute_actions BEFORE report'
 
-(*            in let _ = match report.output with *)
-(*            | STDOUT  -> failwith "STDOUT!"*)
-(*            | FILE(x) -> failwith (Printf.sprintf "FILE %s" x)*)
+            in let (sql, binds) = parametrized_sql report
 
-            in let sql = sql_of report
-            
-            in let data = Db.with_connection (fun conn -> Db.select_all conn sql (fun ds -> list_of_ds report ds))
+            in let data = Db.with_connection (fun conn -> Db.select_all conn sql (fun ds -> list_of_ds report ds) ~bind:binds )
                                                                               (connection_of report)
             in let model = Model.make (column_headers report) data (metavars report)
 

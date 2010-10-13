@@ -1,7 +1,10 @@
 open Postgresql
+open ExtArray
 
-let select_all (conn:connection) sql f = 
-    let res = (conn#exec ~expect:[Tuples_ok] sql)
+module P = Printf
+
+let select_all ?bind:(b=[]) (conn:connection) sql f   = 
+    let res = (conn#exec ~expect:[Tuples_ok] ~params:(Array.of_list b) sql)
     in  f res#get_all_lst
 
 let with_connection f conn_info = 
@@ -10,4 +13,6 @@ let with_connection f conn_info =
                 with e -> c#finish; raise e 
     in  c#finish; x
 
+
+let placeholder i n = (P.sprintf "$%d" i)
 

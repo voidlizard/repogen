@@ -20,7 +20,8 @@ ECHO " ----- SQL -----"
 ECHO "${SQL}"
 ECHO " --------------- "
 ECHO "TEMPLATE ${TEMPLATE}"
-%% ABORT
+ECHO "QUERY_ARGS_BUSN ${QUERY_ARG_BUSN}"
+ABORT
 
 ECHO AFTER " *** DONE *** "
 
@@ -40,9 +41,10 @@ END
 
 COLUMN
     SOURCE v.issue_year
-    ALIAS year
+    %% ALIAS year
     NAME  "год выпуска"
     SORT DESC
+    %% FILTER LIKE("2008")
     %% FOLD YES
 END
 
