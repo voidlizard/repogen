@@ -17,7 +17,8 @@ let digit   = ['0' - '9']
 let decimal = digit+
 let hexdigit = ['0' - '9' 'a' - 'f' 'A' - 'F']
 let hexadecimal = ("0x" | "0X") hexdigit hexdigit*
-let number  = '-'? digit+ '.' digit+
+let number  = '-'? digit+ ('.' digit+)?
+
 let space   = [' ' '\t']
 
 rule token = parse
@@ -25,8 +26,6 @@ rule token = parse
     | "%%" [^'\n']* '\n' { incr_linenum lexbuf; token lexbuf }
     | space           { token lexbuf }
     | '\n'            { incr_linenum lexbuf; token lexbuf }
-    | decimal         { INT (int_of_string(lexeme lexbuf)) }
-    | hexadecimal     { INT (int_of_string(lexeme lexbuf)) }
     | number          { NUMBER (lexeme lexbuf) }
     | "ALIAS"         { ALIAS }
     | "COLUMN"        { COLUMN }
