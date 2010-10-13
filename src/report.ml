@@ -169,7 +169,7 @@ let sql_of rep  =
             | GT _   -> ">"
             | LT _   -> "<"
             | GE _   -> ">="
-            | LE _   -> ">="
+            | LE _   -> "<="
             | NE _   -> "!="
             | EQ _   -> "="
             | _      -> assert false

@@ -34,7 +34,7 @@ COLUMN
     ALIAS busn
     NAME  "госномер"
     SORT ASC
-    FILTER LIKE("%780%")
+    %% FILTER LIKE("%780%")
     %% FOLD YES
 END
 
@@ -43,7 +43,7 @@ COLUMN
     ALIAS year
     NAME  "год выпуска"
     SORT DESC
-    FILTER AND(NOT(OR(EQ(2001), EQ(2002))), GT(2000))
+    FILTER AND(LE(2008), GT(2006))
     %% FILTER NOT(EQ(2001))
     %% FOLD YES
 END
@@ -60,7 +60,7 @@ COLUMN
     SOURCE v.speeding
     ALIAS speeding
     NAME  "превышения скорости"
-    FILTER EQ("+")
+    %% FILTER EQ("+")
     %% FOLD YES
 END
 
