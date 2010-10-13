@@ -43,7 +43,7 @@ COLUMN
     ALIAS year
     NAME  "год выпуска"
     SORT DESC
-    FILTER AND(LE(2008), GT(2006))
+    FILTER OR(OR(BETWEEN(2008, 2009), EQ(2010)), EQ(1))
     %% FILTER NOT(EQ(2001))
     %% FOLD YES
 END
@@ -52,7 +52,7 @@ COLUMN
     SOURCE v.driver_name
     ALIAS driver
     NAME  "водитель"
-    %% FILTER LIKE("%ПУПКИН%")
+    FILTER LIKE("%ПУПКИН%")
     %% FOLD YES
 END
 

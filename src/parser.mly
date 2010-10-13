@@ -126,10 +126,14 @@ filter_eq:
     | LE filt_single_arg             { (R.LE($2)) }
     | GE filt_single_arg             { (R.GE($2)) }
     | LIKE filt_like_arg             { (R.LIKE($2)) }
+    | BETWEEN filt_bin_arg           { (R.BETWEEN($2)) }
     | filt_logic_op                  { $1 }
 
 filt_single_arg:
     | OBR filt_arg CBR               { $2 }
+
+filt_bin_arg:
+    | OBR filt_arg COMMA filt_arg CBR { ($2, $4) }
 
 filt_arg:
     | NUMBER                         { B.number_constant $1 }

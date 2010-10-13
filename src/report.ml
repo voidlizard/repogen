@@ -35,6 +35,7 @@ and varfun_t = ( report_t -> string )
 and filt_op_t = LIKE of val_t | EQ of val_t | NE of val_t
                 | LT of val_t | GT of val_t | LE of val_t 
                 | GE of val_t
+                | BETWEEN of (val_t * val_t)
                 | OR of filt_op_t * filt_op_t
                 | AND of filt_op_t * filt_op_t
                 | NOT of filt_op_t
@@ -163,6 +164,7 @@ let sql_of rep  =
         | NOT(a)   -> P.sprintf "not (%s)" (op src a) 
         | OR(a,b)  -> P.sprintf "(%s or %s)" (op src a) (op src b)
         | AND(a,b) -> P.sprintf "(%s and %s)" (op src a) (op src b)
+        | BETWEEN(a, b) -> P.sprintf "%s between %s and %s" (fcn src) (quote a) (quote b)
         | _      -> P.sprintf "%s %s %s" (fcn src) (op_of v) (quote (val_of v))
         and op_of = function
             | LIKE _ -> "like"
@@ -235,36 +237,57 @@ let metavars report =
 let extract_query_args col =
 
     let argn (l,s) = P.sprintf "QUERY_ARG_%s%s" (String.uppercase (report_col_name col))
-                                                (if l > 0 then P.sprintf "_%s%d" s l
-                                                          else "")
+                                                (if s <> "" then P.sprintf "_%s%d" s l
+                                                            else "" )
 
     in let rec extract col = 
 
-        let rec extr ((l,s) as p) v = match v with
-            | LIKE(VAR_REF(_))
-            | EQ(VAR_REF(_))
-            | NE(VAR_REF(_))
-            | LT(VAR_REF(_))
-            | GT(VAR_REF(_))
-            | GE(VAR_REF(_))
-            | LE(VAR_REF(_))  -> ([], v) 
+        let rec extr ((l,s) as p) v = 
+            let arg = argn p
+            in match v with
+                | LIKE(VAR_REF(_))
+                | EQ(VAR_REF(_))
+                | NE(VAR_REF(_))
+                | LT(VAR_REF(_))
+                | GT(VAR_REF(_))
+                | GE(VAR_REF(_))
+                | LE(VAR_REF(_))  -> ([], v)
 
-            | LIKE(x)  -> ([(argn p, x)], LIKE(VAR_REF(argn p))) 
-            | EQ(x)    -> ([(argn p, x)], EQ(VAR_REF(argn p)))
-            | NE(x)    -> ([(argn p, x)], NE(VAR_REF(argn p)))
-            | LT(x)    -> ([(argn p, x)], LT(VAR_REF(argn p)))
-            | GT(x)    -> ([(argn p, x)], GT(VAR_REF(argn p))) 
-            | GE(x)    -> ([(argn p, x)], GE(VAR_REF(argn p)))
-            | LE(x)    -> ([(argn p, x)], LE(VAR_REF(argn p)))
+                | LIKE(x)  -> ([(arg, x)], LIKE(VAR_REF(arg))) 
+                | EQ(x)    -> ([(arg, x)], EQ(VAR_REF(arg)))
+                | NE(x)    -> ([(arg, x)], NE(VAR_REF(arg)))
+                | LT(x)    -> ([(arg, x)], LT(VAR_REF(arg)))
+                | GT(x)    -> ([(arg, x)], GT(VAR_REF(arg))) 
+                | GE(x)    -> ([(arg, x)], GE(VAR_REF(arg)))
+                | LE(x)    -> ([(arg, x)], LE(VAR_REF(arg)))
 
-            | NOT(a)   -> let (args, x) = extr p a in (args, NOT(x)) 
-            | AND(a,b) -> let (args, l, r) = extr_bin l a b in (args, AND(l, r))
-            | OR(a,b)  -> let (args, l, r) = extr_bin l a b in (args, OR(l, r))
+                | BETWEEN(a,b) -> let vs = extr_vals p [a;b]
+                                  in let args = List.map2 ( fun z1 z2 -> match (z1, z2) with
+                                                         | (Some((n, v)), zz) -> VAR_REF(n) 
+                                                         | (None, zz) -> zz
+                                                       )
+                                                       vs [a;b]
+                                  in let argz = List.filter Option.is_some vs |> List.map Option.get
+                                  in let (x1,x2) = match args with
+                                                   | x :: y :: [] -> (x,y)
+                                                   | _            -> assert false
+                                  in (argz, BETWEEN(x1, x2))
+
+                | NOT(a)   -> let (args, x) = extr p a in (args, NOT(x)) 
+                | AND(a,b) -> let (args, l, r) = extr_bin l a b in (args, AND(l, r))
+                | OR(a,b)  -> let (args, l, r) = extr_bin l a b in (args, OR(l, r))
                           
         and extr_bin l a b = 
             let (args1, x1) = extr ((l+1),"L") a
             in let (args2, x2) = extr ((l+1),"R") b
             in (args1 @ args2, x1, x2) 
+
+        and extr_vals (l,s) vs =
+            List.mapi ( fun i x -> match x with
+                                   | VAR_REF _ -> None
+                                   | x         -> Some((argn (l, (P.sprintf "P%d_%s" i s)), x))
+                      ) vs
+                        
 
         in match col.col_filter with
             | Some(x) -> let (args, flt) = extr (0,"") x in (args, {col with col_filter = Some(flt)}) 
