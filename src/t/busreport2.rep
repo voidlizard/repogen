@@ -43,7 +43,7 @@ COLUMN
     ALIAS year
     NAME  "год выпуска"
     SORT DESC
-    FILTER GT(2001)
+    FILTER OR(EQ(2001), EQ(2002))
     %% FOLD YES
 END
 
