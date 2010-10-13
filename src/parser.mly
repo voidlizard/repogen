@@ -10,7 +10,7 @@ module R = Report
 %token <string> STRING
 %token <string> NUMBER
 %token <string> IDENT
-%token DOT
+%token DOT COMMA
 %token FIELD COLUMN END ALIAS NAME SOURCE FILTER SORT FOLD
 %token GROUP
 %token NONE YES NO NONE ASC DESC
@@ -20,7 +20,8 @@ module R = Report
 %token POSTPROCESS ECHO ABORT
 %token BEFORE AFTER
 %token EQ NE LT GT LE GE 
-%token OR AND IN BETWEEN  
+%token OR AND NOT
+%token IN BETWEEN  
 %token LIKE
 
 %token EOF
@@ -115,20 +116,20 @@ misc_actions:
     | ABORT AFTER                    { B.with_abort R.AFTER }
 
 filter:
-    | FILTER filter_eq               { $2 }
+    | FILTER filter_eq               { B.with_col_filt $2 }
 
 filter_eq:
-    | EQ filt_single_arg             { B.with_col_filt (R.EQ($2)) }
-    | NE filt_single_arg             { B.with_col_filt (R.NE($2)) }
-    | LT filt_single_arg             { B.with_col_filt (R.LT($2)) }
-    | GT filt_single_arg             { B.with_col_filt (R.GT($2)) }
-    | LE filt_single_arg             { B.with_col_filt (R.LE($2)) }
-    | GE filt_single_arg             { B.with_col_filt (R.GE($2)) }
-    | LIKE filt_like_arg             { B.with_col_filt (R.LIKE($2)) }
+    | EQ filt_single_arg             { (R.EQ($2)) }
+    | NE filt_single_arg             { (R.NE($2)) }
+    | LT filt_single_arg             { (R.LT($2)) }
+    | GT filt_single_arg             { (R.GT($2)) }
+    | LE filt_single_arg             { (R.LE($2)) }
+    | GE filt_single_arg             { (R.GE($2)) }
+    | LIKE filt_like_arg             { (R.LIKE($2)) }
+    | filt_logic_op                  { $1 }
 
 filt_single_arg:
     | OBR filt_arg CBR               { $2 }
-
 
 filt_arg:
     | NUMBER                         { B.number_constant $1 }
@@ -136,5 +137,11 @@ filt_arg:
 
 filt_like_arg:
     | OBR STRING CBR                 { B.string_constant $2 }
+
+
+filt_logic_op:
+    | OR  OBR filter_eq COMMA filter_eq CBR { (R.OR($3,$5))  }
+    | AND OBR filter_eq COMMA filter_eq CBR { (R.AND($3,$5)) }
+    | NOT OBR filter_eq CBR                 { (R.NOT($3)) }
 
 %%

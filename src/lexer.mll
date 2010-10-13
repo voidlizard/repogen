@@ -56,18 +56,20 @@ rule token = parse
     | "ABORT"         { ABORT }
     | "BEFORE"        { BEFORE }
     | "AFTER"         { AFTER }
-    | "."             { DOT }
     | "EQ"            { EQ }
     | "NE"            { NE }
     | "LT"            { LT }
     | "GT"            { GT }
     | "LE"            { LE }
     | "GE"            { GE }
-    | "OR"            { OR }
-    | "AND"           { AND }
     | "IN"            { IN }
     | "LIKE"          { LIKE }
     | "BETWEEN"       { BETWEEN }
+    | "OR"            { OR }
+    | "AND"           { AND }
+    | "NOT"           { NOT }
+    | ","             { COMMA } 
+    | "."             { DOT }
     | "("             { OBR }
     | ")"             { CBR }
     | ident           { IDENT (lexeme lexbuf) }

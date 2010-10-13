@@ -35,6 +35,9 @@ and varfun_t = ( report_t -> string )
 and filt_op_t = LIKE of val_t | EQ of val_t | NE of val_t
                 | LT of val_t | GT of val_t | LE of val_t 
                 | GE of val_t
+                | OR of filt_op_t * filt_op_t
+                | AND of filt_op_t * filt_op_t
+                | NOT of filt_op_t
 
 and val_t = STR_CONST of string | NUM_CONST of string | VAR_REF of string
 
@@ -156,7 +159,11 @@ let sql_of rep  =
                                                | Some(x) -> (x, c.col_source) :: acc
                                   ) [] rep.columns
         in let rec emit flt = List.map (fun (f, src) -> op src f) flt
-        and op src v = P.sprintf "%s %s %s" (fcn src) (op_of v) (quote (val_of v))
+        and op src v = match v with 
+        | NOT(a)   -> P.sprintf "not (%s)" (op src a) 
+        | OR(a,b)  -> P.sprintf "(%s or %s)" (op src a) (op src b)
+        | AND(a,b) -> P.sprintf "(%s and %s)" (op src a) (op src b)
+        | _      -> P.sprintf "%s %s %s" (fcn src) (op_of v) (quote (val_of v))
         and op_of = function
             | LIKE _ -> "like"
             | GT _   -> ">"
@@ -165,6 +172,7 @@ let sql_of rep  =
             | LE _   -> ">="
             | NE _   -> "!="
             | EQ _   -> "="
+            | _      -> assert false
         and quote = function
             | STR_CONST(s) -> P.sprintf "'%s'" s
             | NUM_CONST(v) -> v
@@ -226,11 +234,13 @@ let metavars report =
 
 let extract_query_args col =
 
-    let argn = P.sprintf "QUERY_ARG_%s" (String.uppercase (report_col_name col))
+    let argn (l,s) = P.sprintf "QUERY_ARG_%s%s" (String.uppercase (report_col_name col))
+                                                (if l > 0 then P.sprintf "_%s%d" s l
+                                                          else "")
 
     in let rec extract col = 
 
-        let rec extr v = match v with
+        let rec extr ((l,s) as p) v = match v with
             | LIKE(VAR_REF(_))
             | EQ(VAR_REF(_))
             | NE(VAR_REF(_))
@@ -239,16 +249,25 @@ let extract_query_args col =
             | GE(VAR_REF(_))
             | LE(VAR_REF(_))  -> ([], v) 
 
-            | LIKE(x)  -> ([(argn, x)], LIKE(VAR_REF(argn))) 
-            | EQ(x)    -> ([(argn, x)], EQ(VAR_REF(argn)))
-            | NE(x)    -> ([(argn, x)], NE(VAR_REF(argn)))
-            | LT(x)    -> ([(argn, x)], LT(VAR_REF(argn)))
-            | GT(x)    -> ([(argn, x)], GT(VAR_REF(argn))) 
-            | GE(x)    -> ([(argn, x)], GE(VAR_REF(argn)))
-            | LE(x)    -> ([(argn, x)], LE(VAR_REF(argn)))
+            | LIKE(x)  -> ([(argn p, x)], LIKE(VAR_REF(argn p))) 
+            | EQ(x)    -> ([(argn p, x)], EQ(VAR_REF(argn p)))
+            | NE(x)    -> ([(argn p, x)], NE(VAR_REF(argn p)))
+            | LT(x)    -> ([(argn p, x)], LT(VAR_REF(argn p)))
+            | GT(x)    -> ([(argn p, x)], GT(VAR_REF(argn p))) 
+            | GE(x)    -> ([(argn p, x)], GE(VAR_REF(argn p)))
+            | LE(x)    -> ([(argn p, x)], LE(VAR_REF(argn p)))
+
+            | NOT(a)   -> let (args, x) = extr p a in (args, NOT(x)) 
+            | AND(a,b) -> let (args, l, r) = extr_bin l a b in (args, AND(l, r))
+            | OR(a,b)  -> let (args, l, r) = extr_bin l a b in (args, OR(l, r))
+                          
+        and extr_bin l a b = 
+            let (args1, x1) = extr ((l+1),"L") a
+            in let (args2, x2) = extr ((l+1),"R") b
+            in (args1 @ args2, x1, x2) 
 
         in match col.col_filter with
-            | Some(x) -> let (args, flt) = extr x in (args, {col with col_filter = Some(flt)}) 
+            | Some(x) -> let (args, flt) = extr (0,"") x in (args, {col with col_filter = Some(flt)}) 
             | None    -> ([], col)
     
     in extract col

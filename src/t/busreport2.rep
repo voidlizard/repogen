@@ -43,7 +43,8 @@ COLUMN
     ALIAS year
     NAME  "год выпуска"
     SORT DESC
-    FILTER OR(EQ(2001), EQ(2002))
+    FILTER AND(NOT(OR(EQ(2001), EQ(2002))), GT(2000))
+    %% FILTER NOT(EQ(2001))
     %% FOLD YES
 END
 
@@ -59,7 +60,7 @@ COLUMN
     SOURCE v.speeding
     ALIAS speeding
     NAME  "превышения скорости"
-    %% FILTER EQ("+")
+    FILTER EQ("+")
     %% FOLD YES
 END
 
