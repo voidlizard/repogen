@@ -1,0 +1,11 @@
+#foreach (c in columns)
+"${c.display_name}";\
+#end
+
+#foreach (r in rows)
+    #foreach (c in row_columns(r))
+"${c}";\
+    #end
+
+#end
+
