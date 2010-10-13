@@ -118,21 +118,21 @@ filter:
     | FILTER filter_eq               { $2 }
 
 filter_eq:
-    | EQ filt_single_arg             { assert false }
-    | NE filt_single_arg             { assert false }
-    | LT filt_single_arg             { assert false }
-    | GT filt_single_arg             { assert false }
-    | LE filt_single_arg             { assert false }
-    | GE filt_single_arg             { assert false }
+    | EQ filt_single_arg             { B.with_col_filt (R.EQ($2)) }
+    | NE filt_single_arg             { B.with_col_filt (R.NE($2)) }
+    | LT filt_single_arg             { B.with_col_filt (R.LT($2)) }
+    | GT filt_single_arg             { B.with_col_filt (R.GT($2)) }
+    | LE filt_single_arg             { B.with_col_filt (R.LE($2)) }
+    | GE filt_single_arg             { B.with_col_filt (R.GE($2)) }
     | LIKE filt_like_arg             { B.with_col_filt (R.LIKE($2)) }
 
 filt_single_arg:
-    | OBR filt_arg CBR               { assert false }
+    | OBR filt_arg CBR               { $2 }
 
 
 filt_arg:
-    | NUMBER                         { assert false }
-    | STRING                         { assert false }
+    | NUMBER                         { B.number_constant $1 }
+    | STRING                         { B.string_constant $1 }
 
 filt_like_arg:
     | OBR STRING CBR                 { B.string_constant $2 }

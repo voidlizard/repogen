@@ -9,11 +9,13 @@
 
 \texttt{ ${OUTPUT} } 
 
+Годы выпуска: ${QUERY_ARG_YEAR}
+
 \begin{center}
     \begin{longtable}{ ll }
-    ${header.busn} & ${header.driver} \\ 
+    ${header.busn} & ${header.year} & ${header.driver} \\ 
     #foreach (row in rows)
-    ${row.busn} & ${row.driver} \\ 
+    ${row.busn} & ${row.year} & ${row.driver} \\ 
     #end
     \end{longtable}
 \end{center}

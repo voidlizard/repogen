@@ -32,8 +32,11 @@ and output_t = STDOUT | FILE of string
 and action_when_t = BEFORE | AFTER
 and action_t = ( report_t -> report_t )
 and varfun_t = ( report_t -> string )
-and filt_op_t = LIKE of val_t
-and val_t = STR_CONST of string | VAR_REF of string
+and filt_op_t = LIKE of val_t | EQ of val_t | NE of val_t
+                | LT of val_t | GT of val_t | LE of val_t 
+                | GE of val_t
+
+and val_t = STR_CONST of string | NUM_CONST of string | VAR_REF of string
 
 let ident i s = P.sprintf "%s %s" i s
 
@@ -80,6 +83,7 @@ let execute_actions t report =
 
 
 let str_of_val = function
+    | NUM_CONST(s) -> s
     | STR_CONST(s) -> s
     | VAR_REF(s)   -> P.sprintf "${%s}" s
 
@@ -151,11 +155,26 @@ let sql_of rep  =
                                                | None -> acc 
                                                | Some(x) -> (x, c.col_source) :: acc
                                   ) [] rep.columns
-        in let rec emit cnd = function
-            | (LIKE(VAR_REF(s)), c)   :: xs -> emit ((P.sprintf "%s like ${%s}" (fcn c) s)::cnd) xs
-            | (LIKE(STR_CONST(s)), c) :: xs -> emit ((P.sprintf "%s like '%s'" (fcn c) s)::cnd) xs
-            | []                 -> cnd
-        in let cnd = String.join "\nand " (emit [] flts) 
+        in let rec emit flt = List.map (fun (f, src) -> op src f) flt
+        and op src v = P.sprintf "%s %s %s" (fcn src) (op_of v) (quote (val_of v))
+        and op_of = function
+            | LIKE _ -> "like"
+            | GT _   -> ">"
+            | LT _   -> "<"
+            | GE _   -> ">="
+            | LE _   -> ">="
+            | NE _   -> "!="
+            | EQ _   -> "="
+        and quote = function
+            | STR_CONST(s) -> P.sprintf "'%s'" s
+            | NUM_CONST(v) -> v
+            | VAR_REF(n) -> P.sprintf "${%s}" n
+        and val_of = function
+            | LIKE(v) | GT(v) | LT(v) | GE(v) 
+            | LE(v) | LE(v) | NE(v) | EQ(v) -> v
+            | _ -> assert false
+
+        in let cnd = String.join "\nand " (emit flts) 
         in (P.sprintf "%s" cnd)
 
 
@@ -209,11 +228,29 @@ let extract_query_args col =
 
     let argn = P.sprintf "QUERY_ARG_%s" (String.uppercase (report_col_name col))
 
-    in let rec extract col = match col.col_filter with
-        | Some(LIKE(STR_CONST(s) as c)) as f  -> ([(argn, STR_CONST(s))],
-                                                  {col with col_filter = Some(LIKE(VAR_REF(argn)))})
-        | None                                -> ([], col)
-        | x                                   -> assert false
+    in let rec extract col = 
+
+        let rec extr v = match v with
+            | LIKE(VAR_REF(_))
+            | EQ(VAR_REF(_))
+            | NE(VAR_REF(_))
+            | LT(VAR_REF(_))
+            | GT(VAR_REF(_))
+            | GE(VAR_REF(_))
+            | LE(VAR_REF(_))  -> ([], v) 
+
+            | LIKE(x)  -> ([(argn, x)], LIKE(VAR_REF(argn))) 
+            | EQ(x)    -> ([(argn, x)], EQ(VAR_REF(argn)))
+            | NE(x)    -> ([(argn, x)], NE(VAR_REF(argn)))
+            | LT(x)    -> ([(argn, x)], LT(VAR_REF(argn)))
+            | GT(x)    -> ([(argn, x)], GT(VAR_REF(argn))) 
+            | GE(x)    -> ([(argn, x)], GE(VAR_REF(argn)))
+            | LE(x)    -> ([(argn, x)], LE(VAR_REF(argn)))
+
+        in match col.col_filter with
+            | Some(x) -> let (args, flt) = extr x in (args, {col with col_filter = Some(flt)}) 
+            | None    -> ([], col)
+    
     in extract col
 
 

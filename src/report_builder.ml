@@ -40,6 +40,8 @@ let col_order_desc () = Some(DESC)
 
 let string_constant s = STR_CONST(s)
 
+let number_constant v = NUM_CONST(v)
+
 let with_column cattr report = 
     let col = List.fold_left (fun c f -> f c)
                              { col_name  = None;
