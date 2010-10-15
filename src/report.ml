@@ -43,7 +43,7 @@ and filt_op_t = LIKE of val_t | EQ of val_t | NE of val_t
 and fun_ns_t = SQL
 and fun_arg_t = FA_ALIAS of string
 and fun_call_t = { fun_ns: fun_ns_t; fun_name: string; fun_args: fun_arg_t list }
-and field_t = { field_name: string option; field_alias: string option; field_source: field_src_t option }
+and field_t = { field_alias: string; field_source: field_src_t}
 and field_src_t = FIELD_FUN_CALL of fun_call_t
 
 and val_t = STR_CONST of string | NUM_CONST of string | VAR_REF of string
@@ -98,11 +98,29 @@ let str_of_val = function
     | VAR_REF(s)   -> P.sprintf "${%s}" s
 
 
-let emit_fun_sql f = 
-    match f with 
-    | { fun_ns = SQL } -> failwith "OK"
-    | { fun_ns = x }   -> failwith "Unsupported namespace"
+let has_sql_fields rep = 
+    List.length (List.filter 
+                        (function {field_source=FIELD_FUN_CALL({fun_ns=SQL})} -> true
+                                  | _ -> false)
+                        rep.fields) > 0
 
+let rec emit_sql_fun r fn args = 
+    let argz = List.map (fun a -> emit_sql_fun_arg r a) args |> String.join ","
+    in P.sprintf "%s(%s)" fn argz
+and emit_sql_fun_arg r = function
+    | FA_ALIAS(s) -> s
+
+let sql_of_field rep f =
+    let src = match f.field_source with
+        | FIELD_FUN_CALL({fun_ns=SQL; fun_name=n; fun_args=a}) -> emit_sql_fun rep n a
+        | _                                                    -> failwith "Unsupported field type"
+    in src
+
+let fields_of report = List.map (function {field_alias=a} -> a) report.fields
+
+let sql_of_fields rep tbl = 
+    let cols = List.map (fun x -> sql_of_field rep x) rep.fields |> String.join ",\n"
+    in P.sprintf "select %s \nfrom %s" cols tbl
 
 let sql_of rep  =
     let idnt = "   "
@@ -224,8 +242,6 @@ let sql_of rep  =
                     else None
 
     in let sel = emit_select cols (emit_from rep) ~where:filter
-
-    in let _ = P.printf "FIELDS: %d\n" (List.length rep.fields)
 
     in if not nested 
        then sel 

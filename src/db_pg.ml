@@ -13,6 +13,16 @@ let with_connection f conn_info =
                 with e -> c#finish; raise e 
     in  c#finish; x
 
+let with_block (conn:connection) f = 
+    let _    = conn#exec  ~expect:[Command_ok] "BEGIN;"
+    in let r = f ()
+    in let _ = conn#exec  ~expect:[Command_ok] "END;"
+    in r
+
+let temp_table (conn:connection) sel b = 
+    let s = "TMPTABLE"
+    in let _ = conn#exec ~expect:[Command_ok] ~params:(Array.of_list b) (P.sprintf "CREATE TEMP TABLE %s ON COMMIT DROP AS (%s);"  s sel)
+    in s
 
 let placeholder i n = (P.sprintf "$%d" i)
 

@@ -55,6 +55,27 @@ let with_options opts rep  =
    in List.fold_left (fun acc f -> f acc) rep fns
 
 
+
+let simple_sql_query report connection sql binds =
+    let mutate ds = list_of_ds report ds
+    in let fn conn = Db.select_all conn sql mutate ~bind:binds
+    in let rows = Db.with_connection fn connection
+    in (rows, [])
+
+let multi_sql_query report connection sql binds =
+    let mutate ds = list_of_ds report ds
+    in let mutate_fields ds = 
+        let hdr = fields_of report
+        in List.map ( fun x -> List.map2 (fun a v -> (a,v)) hdr x) ds
+    in let fn conn = Db.with_block conn (fun () -> let tmp = Db.temp_table conn sql binds 
+                                                   in let rows = Db.select_all conn (P.sprintf "SELECT * FROM %s" tmp) mutate
+                                                   in let fsql = sql_of_fields report tmp
+                                                   in let fields' = Db.select_all conn fsql mutate_fields (* FIXME: FETCH ONE ROW *)
+                                                   in let fields = try List.hd fields' with ExtList.List.Empty_list -> []
+                                                   in (rows, fields)
+                                         )
+    in Db.with_connection fn connection
+
 let () =
     let opts = { opt_filename = None; opt_output = None; opt_tmpl = None }
     in let _ = Arg.parse [
@@ -74,13 +95,14 @@ let () =
             let report = execute_actions BEFORE report'
 
             in let (sql, binds) = parametrized_sql report
+ 
+            in let conn = connection_of report
 
-            in let _ = List.iter ( fun x -> P.printf "field\n" ) report.fields
-
-
-            in let data = Db.with_connection (fun conn -> Db.select_all conn sql (fun ds -> list_of_ds report ds) ~bind:binds )
-                                                                              (connection_of report)
-            in let model = Model.make (column_headers report) data (metavars report)
+            in let (data, fields) = if not (has_sql_fields report)
+                                    then simple_sql_query report conn sql binds
+                                    else multi_sql_query report conn sql binds
+            
+            in let model = Model.make (column_headers report) data ((metavars report) @ fields)
 
             in match report.template with 
                | Some(s) ->

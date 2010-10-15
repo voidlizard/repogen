@@ -9,7 +9,8 @@
 
 \texttt{ ${OUTPUT} } 
 
-Годы выпуска: ${QUERY_ARG_YEAR}
+Максимальный год выпуска: ${oldest}
+Минимальный  год выпуска: ${newest}
 
 Водитель: ${QUERY_ARG_DRIVER}
 
@@ -19,7 +20,6 @@
 
     #foreach (row in rows)
     ${row.busn} & ${row.year} & ${row.driver} \\ 
-
     #end
     \end{longtable}
 \end{center}

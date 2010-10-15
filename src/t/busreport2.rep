@@ -14,8 +14,8 @@ OUTPUT STDOUT
 %% OUTPUT FILE "qqq.csv"
 %% POSTPROCESS "gnome-open ${OUTPUT}"
 
-POSTPROCESS "/usr/bin/pdflatex -output-directory=/tmp/ -interaction=batchmode ${OUTPUT} > /dev/null" %% PASS ONE
-POSTPROCESS "/usr/bin/pdflatex -output-directory=/tmp/ -interaction=batchmode ${OUTPUT}  > /dev/null" %% PASS TWO
+%% POSTPROCESS "/usr/bin/pdflatex -output-directory=/tmp/ -interaction=batchmode ${OUTPUT} > /dev/null" %% PASS ONE
+%% POSTPROCESS "/usr/bin/pdflatex -output-directory=/tmp/ -interaction=batchmode ${OUTPUT}  > /dev/null" %% PASS TWO
 
 ECHO "***** JOPA KITA PECHEN TRESKI ********"
 ECHO "OUTPUT ${OUTPUT}"
@@ -25,7 +25,7 @@ ECHO " --------------- "
 ECHO "TEMPLATE ${TEMPLATE}"
 ECHO "QUERY_ARGS_BUSN ${QUERY_ARG_BUSN}"
 
-ABORT
+%% ABORT
 
 ECHO AFTER " *** DONE *** "
 
@@ -48,6 +48,7 @@ COLUMN
     ALIAS year
     NAME  "год выпуска"
     SORT DESC
+    FILTER NOT(EQ(0))
     %% FILTER OR(OR(BETWEEN(2008, 2009), EQ(2010)), EQ(1))
     %% FILTER NOT(EQ(2001))
     %% FOLD YES
@@ -70,9 +71,12 @@ COLUMN
 END
 
 FIELD
-  NAME "самый старый"
   ALIAS oldest
   SOURCE SQL.MAX(year)
 END
 
+FIELD
+  ALIAS newest
+  SOURCE SQL.MIN(year)
+END
 

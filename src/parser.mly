@@ -84,7 +84,6 @@ field_decl:                      { [] }
     | field_entry field_decl     { $1 :: $2 }
 
 field_entry:
-    | NAME STRING                { B.with_field_name $2 } 
     | ALIAS IDENT                { B.with_field_alias $2 }
     | field_source               { $1 } 
 
