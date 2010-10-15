@@ -19,7 +19,7 @@ let hexdigit = ['0' - '9' 'a' - 'f' 'A' - 'F']
 let hexadecimal = ("0x" | "0X") hexdigit hexdigit*
 let number  = '-'? digit+ ('.' digit+)?
 
-let space   = [' ' '\t']
+let space   = [' ' '\t' '\r' '\n']
 
 rule token = parse
     | "#"  [^'\n']* '\n' { incr_linenum lexbuf; token lexbuf }
@@ -68,6 +68,7 @@ rule token = parse
     | "OR"            { OR }
     | "AND"           { AND }
     | "NOT"           { NOT }
+    | "SQL"           { SQL }
     | ","             { COMMA } 
     | "."             { DOT }
     | "("             { OBR }

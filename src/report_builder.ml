@@ -86,12 +86,25 @@ let with_echo w s r =
     | R.BEFORE -> { r with pre_actions  = echo :: r.pre_actions  } 
     | R.AFTER  -> { r with post_actions = echo :: r.post_actions  } 
 
-
 let with_abort w r = 
     let abrt = (fun r' -> failwith "ABORTED")
     in match w with
     | R.BEFORE -> { r with pre_actions  = abrt :: r.pre_actions }
     | R.AFTER  -> { r with post_actions = abrt :: r.post_actions }
+
+let fun_arg_ident i = FA_ALIAS(i)
+
+let fun_call (ns, (name, args)) = 
+    FIELD_FUN_CALL({fun_ns = ns; fun_name = name; fun_args = args})
+
+let with_field_source src field = 
+    { field with field_source = src }
+
+let with_field_name name field = 
+    { field with field_name = Some(name) }
+
+let with_field_alias alias field = 
+    { field with field_alias = Some(alias) }
 
 let populate_vars report = 
     let v = List.map ( fun (n,v) -> (n, (fun r -> str_of_val (List.assoc n r.query_args)))) report.query_args

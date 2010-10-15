@@ -2,9 +2,9 @@
 
 CONNECTION db1 "dbname=mososm2"
 
-TEMPLATE_DIRS "t:/home/dmz/templates"
+%% TEMPLATE_DIRS "t:/home/dmz/templates"
 
-TEMPLATE "busreport-latex.tmpl"
+%% TEMPLATE "busreport-latex.tmpl"
 
 %% OUTPUT TEMPORARY 
 %% OUTPUT TEMPORARY "REPOGEN" ".tex" 
@@ -24,6 +24,8 @@ ECHO "${SQL}"
 ECHO " --------------- "
 ECHO "TEMPLATE ${TEMPLATE}"
 ECHO "QUERY_ARGS_BUSN ${QUERY_ARG_BUSN}"
+
+%% ABORT
 
 ECHO AFTER " *** DONE *** "
 
@@ -66,4 +68,11 @@ COLUMN
     %% FILTER EQ("+")
     %% FOLD YES
 END
+
+%%FIELD
+    %%ALIAS oldest
+%%    NAME "самый старый"
+    %%SOURCE SQL.MAX(year)
+%%END
+
 

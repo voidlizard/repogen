@@ -39,6 +39,11 @@ and filt_op_t = LIKE of val_t | EQ of val_t | NE of val_t
                 | OR of filt_op_t * filt_op_t
                 | AND of filt_op_t * filt_op_t
                 | NOT of filt_op_t
+and fun_ns_t = SQL
+and fun_arg_t = FA_ALIAS of string
+and fun_call_t = { fun_ns: fun_ns_t; fun_name: string; fun_args: fun_arg_t list }
+and field_t = { field_name: string option; field_alias: string option; field_source: field_src_t }
+and field_src_t = FIELD_FUN_CALL of fun_call_t
 
 and val_t = STR_CONST of string | NUM_CONST of string | VAR_REF of string
 

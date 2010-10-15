@@ -81,7 +81,8 @@ let () =
 
             in match report.template with 
                | Some(s) ->
-                   let tmpl  = T.from_file cache s
+                   let _ = P.printf "TEMPLATE: %s\n" s 
+                   in let tmpl  = T.from_file cache s
                    in let () = dump_output report (T.render_string tmpl model)
                    in ignore (execute_actions AFTER report)
                | None -> ()

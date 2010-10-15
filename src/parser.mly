@@ -2,6 +2,7 @@
 
 module B = Report_builder
 module R = Report
+module P = Printf
 
 %}
 
@@ -22,6 +23,7 @@ module R = Report
 %token EQ NE LT GT LE GE 
 %token OR AND NOT
 %token IN BETWEEN  
+%token SQL
 %token LIKE
 
 %token EOF
@@ -76,7 +78,36 @@ col_ref:
     | IDENT DOT IDENT            { B.col_ref $1 $3 }
 
 field:
-    | FIELD END                  { failwith "FIELD is not supported yet" }
+    | FIELD field_decl END       { failwith "FIELD is not supported yet" }
+
+field_decl:
+    | field_entry field_decl     { failwith "FIELD ENTRY" }
+
+field_entry:
+    NAME STRING                  { failwith "JOPA!" }
+//    | NAME STRING                { B.with_field_name  $2 }
+//    | ALIAS IDENT                { B.with_field_alias $2 }
+//    | field_source               { $1 } 
+
+field_source:
+    | SOURCE field_source_ref    { B.with_field_source $2 }
+
+field_source_ref:
+    | field_ns DOT fun_call      { B.fun_call ($1, $3) }
+
+field_ns:
+    | SQL                        { R.SQL }
+    | IDENT                      { failwith (P.sprintf "UNKNOWN NAMESPACE (%s)" $1) }
+
+fun_call:
+    | IDENT OBR fun_args CBR    { ($1, $3) }
+
+fun_args:                       { [] }
+    | fun_arg COMMA fun_args    { $1 :: $3 }
+    | fun_arg                   { $1 :: [] }
+
+fun_arg:
+    | IDENT                     { B.fun_arg_ident $1 }
 
 template:
     | TEMPLATE STRING            { B.with_template $2 }
