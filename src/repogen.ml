@@ -67,7 +67,7 @@ let multi_sql_query report connection sql binds =
     in let mutate_fields ds = 
         let hdr = fields_of report
         in List.map ( fun x -> List.map2 (fun a v -> (a,v)) hdr x) ds
-    in let fn conn = Db.with_block conn (fun () -> let tmp = Db.temp_table conn sql binds 
+    in let fn conn = Db.with_block conn (fun () -> let tmp = Db.temp_table conn sql binds
                                                    in let rows = Db.select_all conn (P.sprintf "SELECT * FROM %s" tmp) mutate
                                                    in let fsql = sql_of_fields report tmp
                                                    in let fields' = Db.select_all conn fsql mutate_fields (* FIXME: FETCH ONE ROW *)
