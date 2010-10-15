@@ -13,10 +13,12 @@
 Водитель: ${QUERY_ARG_DRIVER}
 
 \begin{center}
-    \begin{longtable}{ ll }
+    \begin{longtable}{ lll }
     ${header.busn} & ${header.year} & ${header.driver} \\ 
+
     #foreach (row in rows)
     ${row.busn} & ${row.year} & ${row.driver} \\ 
+
     #end
     \end{longtable}
 \end{center}
