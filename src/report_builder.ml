@@ -95,23 +95,31 @@ let with_abort w r =
 let fun_arg_ident i = FA_ALIAS(i)
 
 let fun_call (ns, (name, args)) = 
-    FIELD_FUN_CALL({fun_ns = ns; fun_name = name; fun_args = args})
+    Some(FIELD_FUN_CALL({fun_ns = ns; fun_name = name; fun_args = args}))
 
 let with_field_source src field = 
     { field with field_source = src }
 
-let with_field_name name field = 
+let with_field_name name field =
     { field with field_name = Some(name) }
 
-let with_field_alias alias field = 
+let with_field_alias alias field =
     { field with field_alias = Some(alias) }
+
+let with_field fattr report = 
+    let field = List.fold_left (fun acc f -> f acc) { field_name = None;
+                                                      field_alias = None;
+                                                      field_source = None 
+                                                    } fattr
+    in { report with fields = field :: report.fields }
 
 let populate_vars report = 
     let v = List.map ( fun (n,v) -> (n, (fun r -> str_of_val (List.assoc n r.query_args)))) report.query_args
     in { report with vars = report.vars @ v}
 
 let build_report e  = 
-    let rep = { columns = []; 
+    let rep = { columns = [];
+                fields = [];
                 datasources = [];
                 connections = [];
                 template = None;

@@ -25,7 +25,7 @@ ECHO " --------------- "
 ECHO "TEMPLATE ${TEMPLATE}"
 ECHO "QUERY_ARGS_BUSN ${QUERY_ARG_BUSN}"
 
-%% ABORT
+ABORT
 
 ECHO AFTER " *** DONE *** "
 
@@ -69,10 +69,10 @@ COLUMN
     %% FOLD YES
 END
 
-%%FIELD
-    %%ALIAS oldest
-%%    NAME "самый старый"
-    %%SOURCE SQL.MAX(year)
-%%END
+FIELD
+  NAME "самый старый"
+  ALIAS oldest
+  SOURCE SQL.MAX(year)
+END
 
 

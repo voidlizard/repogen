@@ -41,7 +41,7 @@ entries:                    { [] }
     | entry entries         { $1 :: $2 }
 
 entry:
-    | field                 { assert false }
+    | field                 { $1 }
     | template              { $1 }
     | template_dirs         { $1 }
     | column                { B.with_column $1 }
@@ -78,16 +78,15 @@ col_ref:
     | IDENT DOT IDENT            { B.col_ref $1 $3 }
 
 field:
-    | FIELD field_decl END       { failwith "FIELD is not supported yet" }
+    | FIELD field_decl END       { B.with_field $2 }
 
-field_decl:
-    | field_entry field_decl     { failwith "FIELD ENTRY" }
+field_decl:                      { [] }
+    | field_entry field_decl     { $1 :: $2 }
 
 field_entry:
-    NAME STRING                  { failwith "JOPA!" }
-//    | NAME STRING                { B.with_field_name  $2 }
-//    | ALIAS IDENT                { B.with_field_alias $2 }
-//    | field_source               { $1 } 
+    | NAME STRING                { B.with_field_name $2 } 
+    | ALIAS IDENT                { B.with_field_alias $2 }
+    | field_source               { $1 } 
 
 field_source:
     | SOURCE field_source_ref    { B.with_field_source $2 }
