@@ -75,6 +75,9 @@ let () =
 
             in let (sql, binds) = parametrized_sql report
 
+            in let _ = List.iter ( fun x -> P.printf "field\n" ) report.fields
+
+
             in let data = Db.with_connection (fun conn -> Db.select_all conn sql (fun ds -> list_of_ds report ds) ~bind:binds )
                                                                               (connection_of report)
             in let model = Model.make (column_headers report) data (metavars report)
