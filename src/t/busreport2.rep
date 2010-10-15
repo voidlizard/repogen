@@ -2,9 +2,9 @@
 
 CONNECTION db1 "dbname=mososm2"
 
-%% TEMPLATE_DIRS "t:/home/dmz/templates"
+TEMPLATE_DIRS "t:/home/dmz/templates"
 
-%% TEMPLATE "busreport-latex.tmpl"
+TEMPLATE "busreport-latex.tmpl"
 
 %% OUTPUT TEMPORARY 
 %% OUTPUT TEMPORARY "REPOGEN" ".tex" 
