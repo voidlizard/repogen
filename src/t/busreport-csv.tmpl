@@ -2,9 +2,9 @@
 "${c.display_name}";\
 #end
 
-#foreach (r in rows)
-    #foreach (c in row_columns(r))
-"${c}";\
+#foreach (r in row_columns)
+    #foreach (co in r)
+"${co}";\
     #end
 
 #end

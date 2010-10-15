@@ -11,6 +11,9 @@ TEMPLATE "busreport-latex.tmpl"
 
 OUTPUT STDOUT
 
+%% OUTPUT FILE "qqq.csv"
+%% POSTPROCESS "gnome-open ${OUTPUT}"
+
 %% POSTPROCESS "/usr/bin/pdflatex -output-directory=/tmp/ -interaction=batchmode ${OUTPUT} > /dev/null" %% PASS ONE
 %% POSTPROCESS "/usr/bin/pdflatex -output-directory=/tmp/ -interaction=batchmode ${OUTPUT}  > /dev/null" %% PASS TWO
 
