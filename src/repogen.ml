@@ -32,7 +32,8 @@ let dump_output report out =
 
 type opt = { mutable opt_filename: string option;
              mutable opt_output: output_t option;
-             mutable opt_tmpl: string option
+             mutable opt_tmpl: string option;
+             mutable opt_vars: (string * string) list
            }
 
 let report_of = function
@@ -49,12 +50,13 @@ let with_options opts rep  =
                   | None -> r
                   | Some(x) -> { r with template = Some(x) }
 
+   in let vars = List.map (fun (k,v) -> (fun r -> {r with vars = (k, (fun r -> v)) :: r.vars }))
+                          opts.opt_vars
+
    in let fns = 
-        out :: tmpl :: []
+        out :: tmpl :: vars
 
    in List.fold_left (fun acc f -> f acc) rep fns
-
-
 
 let simple_sql_query report connection sql binds =
     let mutate ds = list_of_ds report ds
@@ -77,14 +79,13 @@ let multi_sql_query report connection sql binds =
     in Db.with_connection fn connection
 
 let () =
-    let opts = { opt_filename = None; opt_output = None; opt_tmpl = None }
+    let opts = { opt_filename = None; opt_output = None; opt_tmpl = None; opt_vars = [] }
     in let _ = Arg.parse [
                             ("--out-file",   Arg.String(fun s -> opts.opt_output <- Some(FILE(s))) , "set output file name");
                             ("--out-stdout", Arg.Unit(fun ()  -> opts.opt_output <- Some(STDOUT) ) , "set output file to STDOUT");
-                            ("--template",   Arg.String(fun s  -> opts.opt_tmpl <- Some(s) ) , "set template");
-                            ("--define",     Arg.String(fun s -> ()) , "define variable NAME=VALUE");
+                            ("--template",   Arg.String(fun s -> opts.opt_tmpl <- Some(s) ) , "set template");
+                            ("--define",     Arg.String(fun s -> Option.may (fun x -> opts.opt_vars <- (x::opts.opt_vars) ) (Misc_parsers.parse_kv s) ) , "NAME=VALUE, define a variable");
                          ] (fun x -> opts.opt_filename <- Some(x) ) "Usage:"
-
 
     in let report' = with_options opts (report_of opts)
 

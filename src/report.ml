@@ -120,7 +120,7 @@ let fields_of report = List.map (function {field_alias=a} -> a) report.fields
 
 let sql_of_fields rep tbl = 
     let cols = List.map (fun x -> sql_of_field rep x) rep.fields |> String.join ",\n"
-    in P.sprintf "select %s \nfrom %s" cols tbl
+    in P.sprintf "select %s \nfrom %s limit 1" cols tbl
 
 let sql_of rep  =
     let idnt = "   "

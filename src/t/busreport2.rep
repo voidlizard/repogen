@@ -7,15 +7,16 @@ TEMPLATE_DIRS "t:/home/dmz/templates"
 TEMPLATE "busreport-latex.tmpl"
 
 %% OUTPUT TEMPORARY 
-%% OUTPUT TEMPORARY "REPOGEN" ".tex" 
+OUTPUT TEMPORARY "REPOGEN" "" 
 
-OUTPUT STDOUT
+%% OUTPUT STDOUT
 
 %% OUTPUT FILE "qqq.csv"
 %% POSTPROCESS "gnome-open ${OUTPUT}"
 
-%% POSTPROCESS "/usr/bin/pdflatex -output-directory=/tmp/ -interaction=batchmode ${OUTPUT} > /dev/null" %% PASS ONE
-%% POSTPROCESS "/usr/bin/pdflatex -output-directory=/tmp/ -interaction=batchmode ${OUTPUT}  > /dev/null" %% PASS TWO
+POSTPROCESS "/usr/bin/pdflatex -output-directory=/tmp/ -interaction=batchmode ${OUTPUT} > /dev/null" %% PASS ONE
+POSTPROCESS "/usr/bin/pdflatex -output-directory=/tmp/ -interaction=batchmode ${OUTPUT}  > /dev/null" %% PASS TWO
+POSTPROCESS "mv ${OUTPUT}${PDF} /tmp/${RESULT}"
 
 ECHO "***** JOPA KITA PECHEN TRESKI ********"
 ECHO "OUTPUT ${OUTPUT}"
@@ -24,8 +25,8 @@ ECHO "${SQL}"
 ECHO " --------------- "
 ECHO "TEMPLATE ${TEMPLATE}"
 ECHO "QUERY_ARGS_BUSN ${QUERY_ARG_BUSN}"
-
-%% ABORT
+ECHO "RESULT=${RESULT}"
+ECHO "PDF=${PDF}"
 
 ECHO AFTER " *** DONE *** "
 
