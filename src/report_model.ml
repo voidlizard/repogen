@@ -3,6 +3,7 @@ struct
 
     open ExtList
     open ExtHashtbl
+    open ExtString
     open Util
     open CamlTemplate.Model
 
@@ -15,11 +16,18 @@ struct
 
         in let make_tlist row = Tlist(List.map (fun s -> Tstr(snd s)) row)
 
+        in let join ~args =
+          match args with
+            [Tstr(d); Tlist(x)] -> let v = List.map (function Tstr(s) -> s | _ -> "") x
+                                   in Tstr(String.join d v)
+            | _ -> raise (Tfun_error "Invalid arguments")
+
         in let root = Hashtbl.create 10
         in let _ = Hashtbl.add root "header" (make_hash row_hdr)
-        in let _ = Hashtbl.add root "columns" (Tlist (List.map  (fun (a,b) -> make_hash [("name", a);("display_name",b)]) row_hdr))
+        in let _ = Hashtbl.add root "header_columns" (Tlist (List.map  (fun (a,b) -> Tstr(b)) row_hdr))
         in let _ = Hashtbl.add root "rows"   (Tlist (List.map make_hash row_data))
         in let _ = Hashtbl.add root "row_columns"  (Tlist (List.map make_tlist row_data))
+        in let _ = Hashtbl.add root "join" (Tfun(join))
         in let _ = List.iter (fun (n,v) -> Hashtbl.add root n (Tstr v)) vars
         in root
 

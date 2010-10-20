@@ -18,7 +18,7 @@ module P = Printf
 %token CONNECTION DATASOURCE TABLE
 %token TEMPLATE TEMPLATE_DIRS
 %token OUTPUT FILE TEMPORARY STDOUT
-%token POSTPROCESS ECHO ABORT
+%token POSTPROCESS ECHO ABORT DROP
 %token BEFORE AFTER
 %token EQ NE LT GT LE GE 
 %token OR AND NOT
@@ -134,6 +134,7 @@ output:
 
 postprocess:
     | POSTPROCESS STRING             { B.with_postprocess $2 }
+    | POSTPROCESS DROP               { B.with_postprocess_drop () }
 
 
 misc_actions:

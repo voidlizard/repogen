@@ -4,7 +4,7 @@ CONNECTION db1 "dbname=mososm2"
 
 TEMPLATE_DIRS "t:/home/dmz/templates"
 
-TEMPLATE "busreport-latex.tmpl"
+TEMPLATE "busreport-latex-auto.tmpl"
 
 %% OUTPUT TEMPORARY 
 OUTPUT TEMPORARY "REPOGEN" "" 
@@ -17,6 +17,8 @@ OUTPUT TEMPORARY "REPOGEN" ""
 POSTPROCESS "/usr/bin/pdflatex -output-directory=/tmp/ -interaction=batchmode ${OUTPUT} > /dev/null" %% PASS ONE
 POSTPROCESS "/usr/bin/pdflatex -output-directory=/tmp/ -interaction=batchmode ${OUTPUT}  > /dev/null" %% PASS TWO
 POSTPROCESS "mv ${OUTPUT}${PDF} /tmp/${RESULT}"
+
+%% POSTPROCESS DROP
 
 ECHO "***** JOPA KITA PECHEN TRESKI ********"
 ECHO "OUTPUT ${OUTPUT}"

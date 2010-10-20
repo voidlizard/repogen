@@ -69,6 +69,7 @@ rule token = parse
     | "AND"           { AND }
     | "NOT"           { NOT }
     | "SQL"           { SQL }
+    | "DROP"          { DROP }
     | ","             { COMMA } 
     | "."             { DOT }
     | "("             { OBR }

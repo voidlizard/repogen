@@ -1,0 +1,31 @@
+\documentclass[a4paper,12pt]{article}
+\usepackage[T2A]{fontenc}
+\usepackage[utf8]{inputenc} % любая желаемая кодировка
+\usepackage[english,russian]{babel}
+%% \usepackage[landscape]{geometry}
+\usepackage{longtable}
+
+\begin{document}
+
+\texttt{ ${OUTPUT} } 
+
+Максимальный год выпуска: ${oldest}
+
+Минимальный  год выпуска: ${newest}
+
+Водитель: ${QUERY_ARG_DRIVER}
+
+
+\begin{center}
+    \begin{longtable}{ #foreach (c in header_columns)l#end }
+	${join(" & ", header_columns)} \\ 
+    #foreach (row in row_columns)
+	${join(" & ", row)} \\ 
+    #end
+    \end{longtable}
+\end{center}
+
+
+\end{document}
+
+

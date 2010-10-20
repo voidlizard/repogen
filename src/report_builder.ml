@@ -79,6 +79,9 @@ let with_postprocess s report =
 
     in { report with post_actions = pp :: report.post_actions }
 
+let with_postprocess_drop () report = 
+    { report with post_actions = [] }
+
 let with_echo w s r =
     let mv = R.metavars 
     in let echo = (fun r' -> print_endline (Stmpl.parse_string s (mv r')); r')
