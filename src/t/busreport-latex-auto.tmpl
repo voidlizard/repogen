@@ -2,7 +2,7 @@
 \usepackage[T2A]{fontenc}
 \usepackage[utf8]{inputenc} % любая желаемая кодировка
 \usepackage[english,russian]{babel}
-%% \usepackage[landscape]{geometry}
+\usepackage[landscape]{geometry}
 \usepackage{longtable}
 
 \begin{document}
@@ -15,7 +15,6 @@
 
 Водитель: ${QUERY_ARG_DRIVER}
 
-
 \begin{center}
     \begin{longtable}{ #foreach (c in header_columns)l#end }
 	${join(" & ", header_columns)} \\ 
@@ -24,7 +23,6 @@
     #end
     \end{longtable}
 \end{center}
-
 
 \end{document}
 

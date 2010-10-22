@@ -36,6 +36,10 @@ rule token = parse
     | "NAME"          { NAME }
     | "GROUP"         { GROUP }
     | "SORT"          { SORT }
+    | "NULL"          { NULL }
+    | "NULLS"         { NULLS }
+    | "FIRST"         { FIRST }
+    | "LAST"          { LAST }
     | "SOURCE"        { SOURCE }
     | "YES"           { YES }
     | "NO"            { NO }

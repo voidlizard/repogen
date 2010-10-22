@@ -28,15 +28,30 @@ let with_col_alias alias col = { col with col_alias = Some(alias) }
 
 let with_col_name name col = { col with col_name = Some(name) }
 
-let with_col_order ord col = { col with col_order = ord }
+let with_col_order ord col = 
+    List.fold_left ( fun acc f -> f acc ) col ord
 
 let with_group col = { col with col_group = true }
 
 let with_col_filt flt col = { col with col_filter = Some(flt) }
 
-let col_order_asc ()  = Some(ASC)
+let col_order_asc ()  = (fun c -> { c with col_order = Some(ORDER(ASC, None)) })
 
-let col_order_desc () = Some(DESC)
+let col_order_desc () = (fun c -> { c with col_order = Some(ORDER(DESC, None)) })
+
+let col_nothing () = (fun c -> c)
+
+let col_nulls_first () =
+    (fun c -> match c.col_order with 
+              | Some(ORDER(x, y)) -> {c with col_order = Some(ORDER(x, Some(NULLS_FIRST)))} 
+              | None              -> c )
+
+let col_nulls_last () =
+    (fun c -> match c.col_order with 
+              | Some(ORDER(x, y)) -> {c with col_order = Some(ORDER(x, Some(NULLS_LAST)))}
+              | None              -> c )
+
+let col_fold () = (fun c -> { c with col_fold = true })
 
 let string_constant s = STR_CONST(s)
 
@@ -49,7 +64,8 @@ let with_column cattr report =
                                col_order = None;
                                col_source = COLUMN("","");
                                col_group = false;
-                               col_filter = None
+                               col_filter = None;
+                               col_fold = false
                               }
                               cattr
     in let (args, col') = extract_query_args col

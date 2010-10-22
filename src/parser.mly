@@ -19,7 +19,7 @@ module P = Printf
 %token TEMPLATE TEMPLATE_DIRS
 %token OUTPUT FILE TEMPORARY STDOUT
 %token POSTPROCESS ECHO ABORT DROP
-%token BEFORE AFTER
+%token BEFORE AFTER LAST FIRST NULL NULLS
 %token EQ NE LT GT LE GE 
 %token OR AND NOT
 %token IN BETWEEN  
@@ -62,17 +62,21 @@ column_attrib:
     | NAME   STRING              { B.with_col_name $2  }
     | SOURCE col_ref             { B.with_col_source $2 }
     | filter                     { $1 }
-    | SORT   sort_args           { B.with_col_order $2 }
+    | SORT  sort_args            { B.with_col_order $2 }
+    | SORT FOLD sort_args        { B.with_col_order ((B.col_fold ()) :: $3) }
     | GROUP                      { B.with_group }
-    | FOLD fold_arg              { assert false }
 
-sort_args:
-    | ASC                        { B.col_order_asc  () }
+sort_args:                        { [] }
+    | sort_order                  { [$1] }
+    | sort_order sort_nulls       { [$1; $2] }
+
+sort_nulls:
+    | NULLS FIRST                { B.col_nulls_first () }
+    | NULLS LAST                 { B.col_nulls_last () }
+
+sort_order:
+    | ASC                        { B.col_order_asc ()  }
     | DESC                       { B.col_order_desc () }
-
-fold_arg:
-    | YES                        { failwith "FOLD is not supported yet" }
-    | NO                         { failwith "FOLD is not supported yet" }
 
 col_ref:
     | IDENT DOT IDENT            { B.col_ref $1 $3 }

@@ -16,7 +16,7 @@ OUTPUT TEMPORARY "REPOGEN" ""
 
 POSTPROCESS "/usr/bin/pdflatex -output-directory=/tmp/ -interaction=batchmode ${OUTPUT} > /dev/null" %% PASS ONE
 POSTPROCESS "/usr/bin/pdflatex -output-directory=/tmp/ -interaction=batchmode ${OUTPUT}  > /dev/null" %% PASS TWO
-POSTPROCESS "mv ${OUTPUT}${PDF} /tmp/${RESULT}"
+%% POSTPROCESS "mv ${OUTPUT}${PDF} /tmp/${RESULT}"
 
 %% POSTPROCESS DROP
 
@@ -32,16 +32,25 @@ ECHO "PDF=${PDF}"
 
 ECHO AFTER " *** DONE *** "
 
+%% ABORT
+
 DATASOURCE TABLE
     ALIAS  v
     SOURCE vf_report
 END
 
 COLUMN
+    SOURCE v.region_name
+    ALIAS region
+    NAME  "район"
+	SORT FOLD ASC NULLS FIRST
+END
+
+COLUMN
     SOURCE v.gos_number
     ALIAS busn
     NAME  "госномер"
-    SORT ASC
+    %% SORT ASC
     %% FILTER LIKE("%780%")
     %% FOLD YES
 END
@@ -50,8 +59,8 @@ COLUMN
     SOURCE v.issue_year
     ALIAS year
     NAME  "год выпуска"
-    SORT DESC
-    FILTER NOT(EQ(0))
+    SORT FOLD ASC NULLS LAST 
+    %% FILTER NOT(EQ(0))
     %% FILTER OR(OR(BETWEEN(2008, 2009), EQ(2010)), EQ(1))
     %% FILTER NOT(EQ(2001))
     %% FOLD YES

@@ -23,9 +23,12 @@ and col_t = { col_name: string option;
               col_order: order_t option;
               col_source: source_t;
               col_group: bool;
-              col_filter: filt_op_t option
+              col_filter: filt_op_t option;
+              col_fold: bool
             }
-and order_t = ASC | DESC
+and order_t = ORDER of order_type_t * nulls_t option
+and order_type_t = ASC | DESC
+and nulls_t = NULLS_FIRST | NULLS_LAST
 and source_t = COLUMN of string * string
 and datasource_t = DS_TABLE of string
 and connection_t = string
@@ -130,8 +133,12 @@ let sql_of rep  =
     in let fcn = function COLUMN(table, name) -> P.sprintf "%s.%s" table name
 
     in let emit_column x = match x with
-       | {col_source = cs; col_alias = a} -> P.sprintf "%s as %s" (fcn cs) (alias a)
-   
+       | {col_source = cs; col_alias = a; } -> P.sprintf "%s as %s" (fcn cs) (alias a)
+
+    in let emit_column_allow_fold x = match x with
+       | {col_source = cs; col_alias = a; col_fold = true}  -> let fc = fcn cs
+           in P.sprintf "(case when lag(%s) over () is distinct from %s then %s else null end) as %s" fc fc fc (alias a)
+       | _ -> emit_column x
 
     in let rec emit_select ?groupby:(g = None)
                            ?ordby:(o = None) 
@@ -155,18 +162,20 @@ let sql_of rep  =
         try (n, List.assoc n rep.datasources)
         with Not_found -> failwith (P.sprintf "No datasource definition: %s" n)
 
-    in let emit_select_cols  columns = 
-        String.join ",\n" (List.map (fun x -> ident idnt x)
-                                    (List.map emit_column columns))
+    in let emit_select_cols ?col_emitter:(e = emit_column) columns = 
+        String.join ",\n" (List.map (fun x -> ident idnt x) (List.map e columns))
 
     in let wrap_subquery sq name = P.sprintf "(%s) as %s" sq name 
 
     in let wrap_subquery_cols (cols:col_t list) name = 
         List.map (fun x -> { x with col_source = COLUMN(name, (alias x.col_alias)) } ) cols
 
-    in let emit_ord_cnd  = function Some(ASC)  -> " asc" 
-                                  | Some(DESC) -> " desc"
-                                  | _          -> "" 
+    in let rec emit_ord_cnd  = function Some(ORDER(ASC, v))  -> " asc" ^ (emit_nulls v)
+                                      | Some(ORDER(DESC, v)) -> " desc" ^ (emit_nulls v)
+                                      | _                    -> ""
+       and emit_nulls = function   Some(NULLS_FIRST) -> " nulls first"
+                                 | Some(NULLS_LAST)  -> " nulls last"
+                                 | None              -> ""
 
     in let emit_ordby cols =
         String.join ",\n" 
@@ -243,12 +252,24 @@ let sql_of rep  =
 
     in let sel = emit_select cols (emit_from rep) ~where:filter
 
-    in if not nested 
+    in let sql =
+       if not nested 
        then sel 
-       else emit_select (emit_select_cols (wrap_subquery_cols rep.columns sq)) 
+       else emit_select (emit_select_cols (wrap_subquery_cols rep.columns sq))
                         (wrap_subquery sel sq) 
                         ~ordby:(Some(emit_ordby ord_cols))
                         ~groupby:groupby
+
+
+    in let folding = List.fold_left (fun acc c -> acc || c.col_fold) false ord_cols
+
+    in let sql = if folding
+                 then emit_select (emit_select_cols (wrap_subquery_cols rep.columns "sq2")
+                                                    ~col_emitter:emit_column_allow_fold)
+                                  (wrap_subquery sql "sq2")
+                 else sql
+
+    in sql 
 
 
 let parametrized_sql report =
