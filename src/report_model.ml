@@ -16,6 +16,15 @@ struct
 
         in let make_tlist row = Tlist(List.map (fun s -> Tstr(snd s)) row)
 
+        in let mk_obj items = 
+            let hash = Hashtbl.create (List.length items)
+            in let () = List.iter (fun (n,v) -> Hashtbl.add hash n v) items
+            in (Thash hash)
+
+        in let mk_item w = (mk_obj [("list",(make_tlist w));
+                                            ("obj", (make_hash w))])
+
+
         in let join ~args =
           match args with
             [Tstr(d); Tlist(x)] -> let v = List.map (function Tstr(s) -> s | _ -> "") x
@@ -23,10 +32,8 @@ struct
             | _ -> raise (Tfun_error "Invalid arguments")
 
         in let root = Hashtbl.create 10
-        in let _ = Hashtbl.add root "header" (make_hash row_hdr)
-        in let _ = Hashtbl.add root "header_columns" (Tlist (List.map  (fun (a,b) -> Tstr(b)) row_hdr))
-        in let _ = Hashtbl.add root "rows"   (Tlist (List.map make_hash row_data))
-        in let _ = Hashtbl.add root "row_columns"  (Tlist (List.map make_tlist row_data))
+        in let _ = Hashtbl.add root "header" (mk_item row_hdr) 
+        in let _ = Hashtbl.add root "rows"  (Tlist(List.map mk_item row_data))
         in let _ = Hashtbl.add root "join" (Tfun(join))
         in let _ = List.iter (fun (n,v) -> Hashtbl.add root n (Tstr v)) vars
         in root

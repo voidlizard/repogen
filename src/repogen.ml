@@ -84,8 +84,9 @@ let () =
                             ("--out-file",   Arg.String(fun s -> opts.opt_output <- Some(FILE(s))) , "set output file name");
                             ("--out-stdout", Arg.Unit(fun ()  -> opts.opt_output <- Some(STDOUT) ) , "set output file to STDOUT");
                             ("--template",   Arg.String(fun s -> opts.opt_tmpl <- Some(s) ) , "set template");
+                            ("--version",    Arg.Unit(fun () -> print_endline Version.version_string; Pervasives.exit 0), "jopa");
                             ("--define",     Arg.String(fun s -> Option.may (fun x -> opts.opt_vars <- (x::opts.opt_vars) ) (Misc_parsers.parse_kv s) ) , "NAME=VALUE, define a variable");
-                         ] (fun x -> opts.opt_filename <- Some(x) ) "Usage:"
+                         ] (fun x -> opts.opt_filename <- Some(x) ) (P.sprintf "%s\nUsage:" Version.version_string)
 
     in let report' = with_options opts (report_of opts)
 

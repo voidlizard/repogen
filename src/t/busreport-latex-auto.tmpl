@@ -16,10 +16,10 @@
 Водитель: ${QUERY_ARG_DRIVER}
 
 \begin{center}
-    \begin{longtable}{ #foreach (c in header_columns)l#end }
-	${join(" & ", header_columns)} \\ 
-    #foreach (row in row_columns)
-	${join(" & ", row)} \\ 
+    \begin{longtable}{ #foreach (c in header.list)l#end }
+	${join(" & ", header.list)} \\ 
+    #foreach (row in rows)
+	${join(" & ", row.list)} \\ 
     #end
     \end{longtable}
 \end{center}

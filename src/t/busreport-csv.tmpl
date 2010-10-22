@@ -1,11 +1,6 @@
-#foreach (c in columns)
-"${c.display_name}";\
-#end
-
-#foreach (r in row_columns)
-    #foreach (co in r)
-"${co}";\
-    #end
+#foreach (c in header.list)"${c}";#end
+#foreach (r in rows)
+#foreach (co in r.list) "${co}";#end
 
 #end
 
