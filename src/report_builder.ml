@@ -116,7 +116,7 @@ let fun_arg_ident i = FA_ALIAS(i)
 let fun_call (ns, (name, args)) = 
     FIELD_FUN_CALL({fun_ns = ns; fun_name = name; fun_args = args})
 
-type tmp_fld = { tmp_alias: string option; tmp_src: field_src_t option }
+type tmp_fld = { tmp_alias: string option; tmp_src: field_src_t option; tmp_flt: (filt_op_t * string) list }
 
 let with_field_source src field = 
     { field with tmp_src = Some(src) }
@@ -124,12 +124,16 @@ let with_field_source src field =
 let with_field_alias alias field =
     { field with tmp_alias = Some(alias) }
 
+let with_field_filter by flt field =
+    { field with tmp_flt = (flt, by) :: field.tmp_flt }
+
 let with_field fattr report = 
     let tmp = List.fold_left (fun acc f -> f acc) { tmp_alias = None;
-                                                    tmp_src   = None 
+                                                    tmp_src   = None;
+                                                    tmp_flt   = [] 
                                                    } fattr
     in let field = match tmp with
-        | { tmp_alias = Some(x); tmp_src = Some(y) } -> { field_alias = x; field_source = y }
+        | { tmp_alias = Some(x); tmp_src = Some(y); tmp_flt = f } -> { field_alias = x; field_source = y; field_flt = f }
         | _                                          -> failwith "Field alias and source are mandatory"
     in { report with fields = field :: report.fields }
 

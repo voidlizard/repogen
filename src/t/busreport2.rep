@@ -85,6 +85,8 @@ END
 FIELD
   ALIAS oldest
   SOURCE SQL.MAX(year)
+  FILTER BY(year) GT(2002)
+  FILTER BY(year) LT(2010)
 END
 
 FIELD

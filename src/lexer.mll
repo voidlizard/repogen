@@ -68,6 +68,7 @@ rule token = parse
     | "GE"            { GE }
     | "IN"            { IN }
     | "LIKE"          { LIKE }
+    | "BY"            { BY }
     | "BETWEEN"       { BETWEEN }
     | "OR"            { OR }
     | "AND"           { AND }

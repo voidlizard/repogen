@@ -46,7 +46,7 @@ and filt_op_t = LIKE of val_t | EQ of val_t | NE of val_t
 and fun_ns_t = SQL
 and fun_arg_t = FA_ALIAS of string
 and fun_call_t = { fun_ns: fun_ns_t; fun_name: string; fun_args: fun_arg_t list }
-and field_t = { field_alias: string; field_source: field_src_t}
+and field_t = { field_alias: string; field_source: field_src_t; field_flt: (filt_op_t * string) list}
 and field_src_t = FIELD_FUN_CALL of fun_call_t
 
 and val_t = STR_CONST of string | NUM_CONST of string | VAR_REF of string
@@ -101,6 +101,34 @@ let str_of_val = function
     | VAR_REF(s)   -> P.sprintf "${%s}" s
 
 
+let fcn = function COLUMN(table, name) -> P.sprintf "%s.%s" table name
+
+let rec emit_flt flt = List.map (fun (f, src) -> op src f) flt
+and op src v = match v with 
+| NOT(a)   -> P.sprintf "not (%s)" (op src a) 
+| OR(a,b)  -> P.sprintf "(%s or %s)" (op src a) (op src b)
+| AND(a,b) -> P.sprintf "(%s and %s)" (op src a) (op src b)
+| BETWEEN(a, b) -> P.sprintf "%s between %s and %s" (fcn src) (quote a) (quote b)
+| _      -> P.sprintf "%s %s %s" (fcn src) (op_of v) (quote (val_of v))
+and op_of = function
+    | LIKE _ -> "like"
+    | GT _   -> ">"
+    | LT _   -> "<"
+    | GE _   -> ">="
+    | LE _   -> "<="
+    | NE _   -> "!="
+    | EQ _   -> "="
+    | _      -> assert false
+and quote = function
+    | STR_CONST(s) -> P.sprintf "'%s'" s
+    | NUM_CONST(v) -> v
+    | VAR_REF(n) -> P.sprintf "${%s}" n
+and val_of = function
+    | LIKE(v) | GT(v) | LT(v) | GE(v) 
+    | LE(v) | LE(v) | NE(v) | EQ(v) -> v
+    | _ -> assert false
+
+
 let has_sql_fields rep = 
     List.length (List.filter 
                         (function {field_source=FIELD_FUN_CALL({fun_ns=SQL})} -> true
@@ -113,25 +141,29 @@ let rec emit_sql_fun r fn args =
 and emit_sql_fun_arg r = function
     | FA_ALIAS(s) -> s
 
-let sql_of_field rep f =
-    let src = match f.field_source with
-        | FIELD_FUN_CALL({fun_ns=SQL; fun_name=n; fun_args=a}) -> emit_sql_fun rep n a
-        | _                                                    -> failwith "Unsupported field type"
+let sql_of_field rep f tbl =
+    let filt = List.map ( fun (f,col) -> (f, COLUMN(tbl, col)) ) 
+    in let where_of x = if x != [] 
+                        then P.sprintf "where %s" (String.join " and " (emit_flt x))
+                        else ""
+    in let src = match f.field_source with
+        | FIELD_FUN_CALL({fun_ns=SQL; fun_name=n; fun_args=a})
+            -> P.sprintf "(select %s from %s %s)" (emit_sql_fun rep n a) tbl 
+                                                  (where_of (filt f.field_flt))
+        | _ -> failwith "Unsupported field type"
     in src
 
 let fields_of report = List.map (function {field_alias=a} -> a) report.fields
 
 let sql_of_fields rep tbl = 
-    let cols = List.map (fun x -> sql_of_field rep x) rep.fields |> String.join ",\n"
-    in P.sprintf "select %s \nfrom %s limit 1" cols tbl
+    let cols = List.map (fun x -> sql_of_field rep x tbl) rep.fields |> String.join ",\n"
+    in P.sprintf "select %s \nlimit 1" cols
 
 let sql_of rep  =
     let idnt = "   "
     in let i1 = ident idnt
     in let alias x = try Option.get x with Option.No_value -> failwith "Alias is not defined"
    
-    in let fcn = function COLUMN(table, name) -> P.sprintf "%s.%s" table name
-
     in let emit_column x = match x with
        | {col_source = cs; col_alias = a; } -> P.sprintf "%s as %s" (fcn cs) (alias a)
 
@@ -194,39 +226,15 @@ let sql_of rep  =
         in P.sprintf "%s %s" s n
 
 
+
     in let emit_where ?idnt:(i="") rep =
         let flts = List.fold_left ( fun acc c -> match c.col_filter with 
                                                | None -> acc 
                                                | Some(x) -> (x, c.col_source) :: acc
                                   ) [] rep.columns
-        in let rec emit flt = List.map (fun (f, src) -> op src f) flt
-        and op src v = match v with 
-        | NOT(a)   -> P.sprintf "not (%s)" (op src a) 
-        | OR(a,b)  -> P.sprintf "(%s or %s)" (op src a) (op src b)
-        | AND(a,b) -> P.sprintf "(%s and %s)" (op src a) (op src b)
-        | BETWEEN(a, b) -> P.sprintf "%s between %s and %s" (fcn src) (quote a) (quote b)
-        | _      -> P.sprintf "%s %s %s" (fcn src) (op_of v) (quote (val_of v))
-        and op_of = function
-            | LIKE _ -> "like"
-            | GT _   -> ">"
-            | LT _   -> "<"
-            | GE _   -> ">="
-            | LE _   -> "<="
-            | NE _   -> "!="
-            | EQ _   -> "="
-            | _      -> assert false
-        and quote = function
-            | STR_CONST(s) -> P.sprintf "'%s'" s
-            | NUM_CONST(v) -> v
-            | VAR_REF(n) -> P.sprintf "${%s}" n
-        and val_of = function
-            | LIKE(v) | GT(v) | LT(v) | GE(v) 
-            | LE(v) | LE(v) | NE(v) | EQ(v) -> v
-            | _ -> assert false
 
-        in let cnd = String.join "\nand " (emit flts) 
+        in let cnd = String.join "\nand " (emit_flt flts) 
         in (P.sprintf "%s" cnd)
-
 
     in let cols  = emit_select_cols rep.columns
 

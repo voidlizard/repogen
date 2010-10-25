@@ -22,7 +22,7 @@ module P = Printf
 %token BEFORE AFTER LAST FIRST NULL NULLS
 %token EQ NE LT GT LE GE 
 %token OR AND NOT
-%token IN BETWEEN  
+%token IN BETWEEN BY 
 %token SQL
 %token LIKE
 
@@ -89,6 +89,7 @@ field_decl:                      { [] }
 
 field_entry:
     | ALIAS IDENT                { B.with_field_alias $2 }
+    | FILTER filt_by filter_eq   { B.with_field_filter $2 $3 }
     | field_source               { $1 } 
 
 field_source:
@@ -110,6 +111,9 @@ fun_args:                       { [] }
 
 fun_arg:
     | IDENT                     { B.fun_arg_ident $1 }
+
+filt_by:
+    | BY OBR IDENT CBR          { $3 }
 
 template:
     | TEMPLATE STRING            { B.with_template $2 }
