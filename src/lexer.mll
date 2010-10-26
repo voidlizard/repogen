@@ -27,6 +27,8 @@ rule token = parse
     | space           { token lexbuf }
     | '\n'            { incr_linenum lexbuf; token lexbuf }
     | number          { NUMBER (lexeme lexbuf) }
+    | "*"             { ASTERISK }
+    | ':'             { COLON }
     | "ALIAS"         { ALIAS }
     | "COLUMN"        { COLUMN }
     | "END"           { END }

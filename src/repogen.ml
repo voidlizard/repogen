@@ -71,8 +71,8 @@ let multi_sql_query report connection sql binds =
         in List.map ( fun x -> List.map2 (fun a v -> (a,v)) hdr x) ds
     in let fn conn = Db.with_block conn (fun () -> let tmp = Db.temp_table conn sql binds
                                                    in let rows = Db.select_all conn (P.sprintf "SELECT * FROM %s" tmp) mutate
-                                                   in let fsql = sql_of_fields report tmp
-                                                   in let fields' = Db.select_all conn fsql mutate_fields (* FIXME: FETCH ONE ROW *)
+                                                   in let (fsql, binds') = parametrized (sql_of_fields report tmp) report
+                                                   in let fields' = Db.select_all conn fsql mutate_fields ~bind:(binds') (* FIXME: FETCH ONE ROW *)
                                                    in let fields = try List.hd fields' with ExtList.List.Empty_list -> []
                                                    in (rows, fields)
                                          )
@@ -96,7 +96,7 @@ let () =
         try
             let report = execute_actions BEFORE report'
 
-            in let (sql, binds) = parametrized_sql report
+            in let (sql, binds) = parametrized (sql_of report) report
  
             in let conn = connection_of report
 

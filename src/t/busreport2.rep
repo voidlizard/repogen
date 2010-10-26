@@ -39,6 +39,24 @@ DATASOURCE TABLE
     SOURCE vf_report
 END
 
+%%COLUMN
+%%    ALIAS wtf
+%%    SOURCE SQL.fun1(v.issue_year, 2009, 2010)
+%%    FILTER GT(22)
+%%END
+
+%%COLUMN
+%%    ALIAS wtf
+%%    SOURCE SQL.fun2(v.issue_year, "2010-03-01")
+%%    FILTER LT(20000)
+%%END
+
+%%COLUMN
+%%    ALIAS wtf
+%%    SOURCE SQL.abs(v.issue_year)
+%%    FILTER GT(22)
+%%END
+
 COLUMN
     SOURCE v.region_name
     ALIAS region
@@ -61,7 +79,7 @@ COLUMN
     NAME  "год выпуска"
     SORT FOLD ASC NULLS LAST 
     %% FILTER NOT(EQ(0))
-    %% FILTER OR(OR(BETWEEN(2008, 2009), EQ(2010)), EQ(1))
+    FILTER OR(OR(BETWEEN(2008, 2009), EQ(2010)), EQ(1))
     %% FILTER NOT(EQ(2001))
     %% FOLD YES
 END

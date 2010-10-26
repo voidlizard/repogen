@@ -1,0 +1,56 @@
+%% ТЕСТОВЫЙ ОТЧЕТ 3
+
+CONNECTION db1 "dbname=mososm2"
+
+TEMPLATE_DIRS "t:/home/dmz/templates"
+
+TEMPLATE "busreport-latex-auto.tmpl"
+
+%% OUTPUT TEMPORARY 
+OUTPUT TEMPORARY "REPOGEN" "" 
+
+%% OUTPUT STDOUT
+
+%% OUTPUT FILE "qqq.csv"
+%% POSTPROCESS "gnome-open ${OUTPUT}"
+
+POSTPROCESS "/usr/bin/pdflatex -output-directory=/tmp/ -interaction=batchmode ${OUTPUT} > /dev/null" %% PASS ONE
+POSTPROCESS "/usr/bin/pdflatex -output-directory=/tmp/ -interaction=batchmode ${OUTPUT}  > /dev/null" %% PASS TWO
+%% POSTPROCESS "mv ${OUTPUT}${PDF} /tmp/${RESULT}"
+
+%% POSTPROCESS DROP
+
+ECHO "***** JOPA KITA PECHEN TRESKI ********"
+ECHO "OUTPUT ${OUTPUT}"
+ECHO " ----- SQL -----"
+ECHO "${SQL}"
+ECHO " --------------- "
+ECHO "TEMPLATE ${TEMPLATE}"
+ECHO "QUERY_ARGS_BUSN ${QUERY_ARG_BUSN}"
+ECHO "RESULT=${RESULT}"
+ECHO "PDF=${PDF}"
+
+ECHO AFTER " *** DONE *** "
+
+ABORT
+
+DATASOURCE TABLE
+    ALIAS  v
+    SOURCE vf_report
+END
+
+COLUMN
+    SOURCE SQL.fun(v.*)
+    ALIAS region
+    NAME  "район"
+    GROUP
+END
+
+COLUMN
+    SOURCE SQL.abs(SQL.fun(1))
+    ALIAS year
+    NAME  "год выпуска"
+    GROUP
+END
+
+

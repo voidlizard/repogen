@@ -22,6 +22,8 @@ let with_connection conn report =
 
 let col_ref a b = COLUMN(a,b)
 
+let table_ref a = COLUMN(a, "*")
+
 let with_col_source cref col = { col with col_source = cref }
 
 let with_col_alias alias col = { col with col_alias = Some(alias) }
@@ -53,6 +55,8 @@ let col_nulls_last () =
 
 let col_fold () = (fun c -> { c with col_fold = true })
 
+let col_fun_call x = FUN_CALL(x)
+
 let string_constant s = STR_CONST(s)
 
 let number_constant v = NUM_CONST(v)
@@ -68,9 +72,7 @@ let with_column cattr report =
                                col_fold = false
                               }
                               cattr
-    in let (args, col') = extract_query_args col
-    in { report with columns = col' :: report.columns;
-                     query_args = report.query_args @ args }
+    in { report with columns = col :: report.columns }
 
 let with_template tpl report = { report with template = Some(tpl) }
 
@@ -89,7 +91,7 @@ let with_output_temp ?prefix:(p="repogen") ?suffix:(s=".out") () report =
 let with_postprocess s report = 
 
     let pp r =
-        let cmd = Stmpl.parse_string s (R.metavars r)
+        let cmd = Stmpl.subst s (R.metavars r)
         in let _ = print_endline cmd
         in Unix.system cmd; r
 
@@ -100,7 +102,7 @@ let with_postprocess_drop () report =
 
 let with_echo w s r =
     let mv = R.metavars 
-    in let echo = (fun r' -> print_endline (Stmpl.parse_string s (mv r')); r')
+    in let echo = (fun r' -> print_endline (Stmpl.subst s (mv r')); r')
     in match w with 
     | R.BEFORE -> { r with pre_actions  = echo :: r.pre_actions  } 
     | R.AFTER  -> { r with post_actions = echo :: r.post_actions  } 
@@ -113,13 +115,23 @@ let with_abort w r =
 
 let fun_arg_ident i = FA_ALIAS(i)
 
+let fun_arg_col_ref r = FA_SRC(r) 
+
+let fun_arg_table_ref r = FA_SRC(r)
+
+let fun_arg_src s = FA_SRC(FUN_CALL(s))
+
+let fun_arg_num num = FA_VAL(NUM_CONST(num))
+
+let fun_arg_str s = FA_VAL(STR_CONST(s))
+
 let fun_call (ns, (name, args)) = 
-    FIELD_FUN_CALL({fun_ns = ns; fun_name = name; fun_args = args})
+    {fun_ns = ns; fun_name = name; fun_args = args}
 
 type tmp_fld = { tmp_alias: string option; tmp_src: field_src_t option; tmp_flt: (filt_op_t * string) list }
 
 let with_field_source src field = 
-    { field with tmp_src = Some(src) }
+    { field with tmp_src = Some(FIELD_FUN_CALL(src)) }
 
 let with_field_alias alias field =
     { field with tmp_alias = Some(alias) }

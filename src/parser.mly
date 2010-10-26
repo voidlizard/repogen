@@ -11,6 +11,7 @@ module P = Printf
 %token <string> STRING
 %token <string> NUMBER
 %token <string> IDENT
+%token ASTERISK COLON
 %token DOT COMMA
 %token FIELD COLUMN END ALIAS NAME SOURCE FILTER SORT FOLD
 %token GROUP
@@ -27,6 +28,8 @@ module P = Printf
 %token LIKE
 
 %token EOF
+
+%left DOT
 
 %start toplevel
 %type <Report.report_t> toplevel
@@ -60,7 +63,7 @@ column_attribs:                     { [] }
 column_attrib:
     | ALIAS  IDENT               { B.with_col_alias $2 }
     | NAME   STRING              { B.with_col_name $2  }
-    | SOURCE col_ref             { B.with_col_source $2 }
+    | SOURCE source              { B.with_col_source $2 }
     | filter                     { $1 }
     | SORT  sort_args            { B.with_col_order $2 }
     | SORT FOLD sort_args        { B.with_col_order ((B.col_fold ()) :: $3) }
@@ -78,8 +81,15 @@ sort_order:
     | ASC                        { B.col_order_asc ()  }
     | DESC                       { B.col_order_desc () }
 
+source:
+    | col_ref                    { $1 }
+    | field_source_ref           { B.col_fun_call $1 }
+
 col_ref:
     | IDENT DOT IDENT            { B.col_ref $1 $3 }
+
+table_ref:
+    | IDENT DOT ASTERISK         { B.table_ref $1 }
 
 field:
     | FIELD field_decl END       { B.with_field $2 }
@@ -100,7 +110,7 @@ field_source_ref:
 
 field_ns:
     | SQL                        { R.SQL }
-    | IDENT                      { failwith (P.sprintf "UNKNOWN NAMESPACE (%s)" $1) }
+/*    | IDENT                    { failwith (P.sprintf "UNKNOWN NAMESPACE (%s)" $1) } --- makes conflicts */
 
 fun_call:
     | IDENT OBR fun_args CBR    { ($1, $3) }
@@ -111,6 +121,11 @@ fun_args:                       { [] }
 
 fun_arg:
     | IDENT                     { B.fun_arg_ident $1 }
+    | STRING                    { B.fun_arg_str $1 }
+    | NUMBER                    { B.fun_arg_num $1 }
+    | col_ref                   { B.fun_arg_col_ref $1 }
+    | table_ref                 { B.fun_arg_table_ref $1 }
+    | field_source_ref          { B.fun_arg_src $1 }
 
 filt_by:
     | BY OBR IDENT CBR          { $3 }

@@ -29,7 +29,7 @@ and col_t = { col_name: string option;
 and order_t = ORDER of order_type_t * nulls_t option
 and order_type_t = ASC | DESC
 and nulls_t = NULLS_FIRST | NULLS_LAST
-and source_t = COLUMN of string * string
+and source_t = COLUMN of string * string | FUN_CALL of fun_call_t
 and datasource_t = DS_TABLE of string
 and connection_t = string
 and output_t = STDOUT | FILE of string
@@ -44,7 +44,7 @@ and filt_op_t = LIKE of val_t | EQ of val_t | NE of val_t
                 | AND of filt_op_t * filt_op_t
                 | NOT of filt_op_t
 and fun_ns_t = SQL
-and fun_arg_t = FA_ALIAS of string
+and fun_arg_t = FA_ALIAS of string | FA_SRC of source_t | FA_VAL of val_t
 and fun_call_t = { fun_ns: fun_ns_t; fun_name: string; fun_args: fun_arg_t list }
 and field_t = { field_alias: string; field_source: field_src_t; field_flt: (filt_op_t * string) list}
 and field_src_t = FIELD_FUN_CALL of fun_call_t
@@ -64,8 +64,9 @@ let filt_by_permiss perm fnames =
                            with Unix.Unix_error _ -> false ) fnames
 
 let rec normalize_report rep =
-    { rep with columns  = normalize_columns rep.columns;
-               template = normalize_template rep.template_dirs rep.template }
+    extract_args { rep with columns  = normalize_columns rep.columns;
+                            template = normalize_template rep.template_dirs rep.template 
+                 }
 
 and normalize_columns cols = List.mapi normalize_column cols
 and normalize_column i  = function ({ col_alias = None } as c)  -> { c with col_alias = Some(P.sprintf "col%d" i) }
@@ -79,6 +80,114 @@ and normalize_template dirs fname =
                     | []     -> None)
     
     | None    -> None
+
+and extract_args rep = 
+
+    let argn = let d = ref 0 in function () -> d := 1 + !d ; (P.sprintf "P%02d" !d)
+
+    in let rec args_of rep = 
+        let args, cols = of_columns rep.columns
+        in let args', fields' = of_fields rep.fields
+        in { rep with columns = cols;
+                      fields = fields';
+                      query_args = args @ args'
+           }
+
+    and of_column (args, cols) x =
+        let (a, c)      = match x.col_filter with 
+                          | Some(f) -> let a, f' = of_filter f in (a, {x with col_filter = Some(f')})
+                          | None    -> ([], x)
+        in let (a', c') = of_source c
+        in (args @ a @ a', cols @ [c'])
+
+    and of_columns c = List.fold_left of_column ([],[]) c
+
+    and of_fields f = 
+        List.fold_left ( fun (a, flds) f -> 
+                         let a', f' = of_field f
+                         in ( a @ a', flds @ [f'] ))
+                       ([],[]) f
+
+    and of_field f = 
+        let (af, ff) = List.fold_left (fun (a, fs) (fx,n)  ->
+                                       let (a', fx') = of_filter fx
+                                       in ( a @ a', fs @ [(fx', n)] ))
+                                      ([], []) f.field_flt
+        in match f with
+        | { field_source = FIELD_FUN_CALL(fc); } ->
+            let a, fc' = of_call fc
+            in (a @ af, {f with field_source = FIELD_FUN_CALL(fc'); field_flt = ff})
+        | _ -> ([], f)
+
+    and of_source col = match col.col_source with
+        | FUN_CALL(v) -> let a, v' = of_call v
+                         in (a, {col with col_source = FUN_CALL(v')})
+        | _           -> ([], col)
+
+    and of_call ({fun_args = a} as fc) =
+        let args, a' = 
+            List.fold_left (fun (qas, fas) fa ->
+                            let a', fa' = of_arg fa in (qas@a', fas@[fa']))
+                           ([], []) a
+        in (args, {fc with fun_args = a'})
+
+    and of_arg x = match x with
+        | FA_ALIAS _          -> ([], x)
+        | FA_SRC(FUN_CALL(f)) -> let a, fc = of_call f in (a, FA_SRC(FUN_CALL(fc)))
+        | FA_SRC(COLUMN _)    -> ([], x)
+        | FA_VAL(VAR_REF _)   -> ([], x) 
+        | FA_VAL(v)           -> let n = argn () in ([(n, v)], FA_VAL(VAR_REF(n)))
+
+    and of_filter f =
+        let rec extr v =
+            let arg = argn ()
+            in match v with
+                | LIKE(VAR_REF(_))
+                | EQ(VAR_REF(_))
+                | NE(VAR_REF(_))
+                | LT(VAR_REF(_))
+                | GT(VAR_REF(_))
+                | GE(VAR_REF(_))
+                | LE(VAR_REF(_))  -> ([], v)
+
+                | LIKE(x)  -> ([(arg, x)], LIKE(VAR_REF(arg))) 
+                | EQ(x)    -> ([(arg, x)], EQ(VAR_REF(arg)))
+                | NE(x)    -> ([(arg, x)], NE(VAR_REF(arg)))
+                | LT(x)    -> ([(arg, x)], LT(VAR_REF(arg)))
+                | GT(x)    -> ([(arg, x)], GT(VAR_REF(arg))) 
+                | GE(x)    -> ([(arg, x)], GE(VAR_REF(arg)))
+                | LE(x)    -> ([(arg, x)], LE(VAR_REF(arg)))
+
+                | BETWEEN(a,b) -> let vs = extr_vals [a;b]
+                                  in let args = List.map2 ( fun z1 z2 -> match (z1, z2) with
+                                                         | (Some((n, v)), zz) -> VAR_REF(n) 
+                                                         | (None, zz) -> zz
+                                                       )
+                                                       vs [a;b]
+                                  in let argz = List.filter Option.is_some vs |> List.map Option.get
+                                  in let (x1,x2) = match args with
+                                                   | x :: y :: [] -> (x,y)
+                                                   | _            -> assert false
+                                  in (argz, BETWEEN(x1, x2))
+
+                | NOT(a)   -> let (args, x) = extr a in (args, NOT(x)) 
+                | AND(a,b) -> let (args, l, r) = extr_bin a b in (args, AND(l, r))
+                | OR(a,b)  -> let (args, l, r) = extr_bin a b in (args, OR(l, r))
+                          
+        and extr_bin a b = 
+            let (args1, x1) = extr a
+            in let (args2, x2) = extr b
+            in (args1 @ args2, x1, x2) 
+
+        and extr_vals vs =
+            List.map ( fun x -> match x with
+                                | VAR_REF _ -> None
+                                | x         -> Some((argn (), x))
+                      ) vs
+        in extr f
+ 
+    in args_of rep 
+
 
 let column_headers report = 
     List.map ( function   { col_name = Some(n); col_alias = Some(a) } -> (a, n)
@@ -94,14 +203,22 @@ let execute_actions t report =
     | BEFORE -> List.fold_left (fun acc x -> x acc) report report.pre_actions
     | AFTER  -> List.fold_left (fun acc x -> x acc) report report.post_actions
 
-
 let str_of_val = function
     | NUM_CONST(s) -> s
     | STR_CONST(s) -> s
     | VAR_REF(s)   -> P.sprintf "${%s}" s
 
+let rec emit_sql_fun fn args = 
+    let argz = List.map (fun a -> emit_sql_fun_arg a) args |> String.join ","
+    in P.sprintf "%s(%s)" fn argz
+and emit_sql_fun_arg = function
+    | FA_ALIAS(s) -> s
+    | FA_SRC(COLUMN(t,c) as col) -> fcn col
+    | FA_SRC(FUN_CALL({fun_name=fn; fun_args=args})) -> emit_sql_fun fn args
+    | FA_VAL(v) -> str_of_val v
 
-let fcn = function COLUMN(table, name) -> P.sprintf "%s.%s" table name
+and fcn = function COLUMN(table, name) -> P.sprintf "%s.%s" table name
+                 | FUN_CALL(x)         -> emit_sql_fun x.fun_name x.fun_args
 
 let rec emit_flt flt = List.map (fun (f, src) -> op src f) flt
 and op src v = match v with 
@@ -135,12 +252,6 @@ let has_sql_fields rep =
                                   | _ -> false)
                         rep.fields) > 0
 
-let rec emit_sql_fun r fn args = 
-    let argz = List.map (fun a -> emit_sql_fun_arg r a) args |> String.join ","
-    in P.sprintf "%s(%s)" fn argz
-and emit_sql_fun_arg r = function
-    | FA_ALIAS(s) -> s
-
 let sql_of_field rep f tbl =
     let filt = List.map ( fun (f,col) -> (f, COLUMN(tbl, col)) ) 
     in let where_of x = if x != [] 
@@ -148,7 +259,7 @@ let sql_of_field rep f tbl =
                         else ""
     in let src = match f.field_source with
         | FIELD_FUN_CALL({fun_ns=SQL; fun_name=n; fun_args=a})
-            -> P.sprintf "(select %s from %s %s)" (emit_sql_fun rep n a) tbl 
+            -> P.sprintf "(select %s from %s %s)" (emit_sql_fun n a) tbl 
                                                   (where_of (filt f.field_flt))
         | _ -> failwith "Unsupported field type"
     in src
@@ -157,7 +268,8 @@ let fields_of report = List.map (function {field_alias=a} -> a) report.fields
 
 let sql_of_fields rep tbl = 
     let cols = List.map (fun x -> sql_of_field rep x tbl) rep.fields |> String.join ",\n"
-    in P.sprintf "select %s \nlimit 1" cols
+    in let sql =  P.sprintf "select %s \nlimit 1" cols
+    in sql
 
 let sql_of rep  =
     let idnt = "   "
@@ -190,9 +302,20 @@ let sql_of rep  =
                            ["select"; c ; f] [w;g;o]
                            |> String.join "\n"
 
-    in let ds_of_col rep = function {col_source = COLUMN(n, c)} ->
-        try (n, List.assoc n rep.datasources)
-        with Not_found -> failwith (P.sprintf "No datasource definition: %s" n)
+    in let rec ds_of_col rep c = 
+        match c with
+        | {col_source = (COLUMN(n, c) as col)} -> lookup rep col
+        | {col_source = FUN_CALL(x)} -> ds_of_fun x
+    and ds_of_fun x = match x with
+        | { fun_args = args } -> List.fold_left (fun acc a -> match a with
+                                                 | FA_SRC(COLUMN _ as b) -> (lookup rep b) @ acc
+                                                 | FA_SRC(FUN_CALL(z))   -> (ds_of_fun z) @ acc
+                                                 | _                     -> acc )
+                                                 [] args
+    and lookup rep = function COLUMN(n,c) ->
+            (try [(n, List.assoc n rep.datasources)]
+             with Not_found -> failwith (P.sprintf "No datasource definition: %s" n))
+            | _ -> [] 
 
     in let emit_select_cols ?col_emitter:(e = emit_column) columns = 
         String.join ",\n" (List.map (fun x -> ident idnt x) (List.map e columns))
@@ -210,9 +333,13 @@ let sql_of rep  =
                                  | None              -> ""
 
     in let emit_ordby cols =
-        String.join ",\n" 
-                    (List.map (fun {col_source=cs; col_order=o} -> (i1 (P.sprintf "%s%s" (fcn cs) (emit_ord_cnd o))) ) 
+        if List.length cols > 0
+        then
+            let s = String.join ",\n" 
+                    (List.map (fun {col_source=cs; col_order=o} -> (i1 (P.sprintf "%s%s" (fcn cs) (emit_ord_cnd o))) )
                               cols)
+            in Some(s)
+        else None
 
     in let emit_groupby cols = 
         String.join ",\n" 
@@ -220,7 +347,7 @@ let sql_of rep  =
                               cols)
 
     in let emit_from rep = 
-        let ds = List.map (fun x -> ds_of_col rep x) rep.columns |> List.unique
+        let ds = List.fold_left (fun acc x -> (ds_of_col rep x) @ acc) [] rep.columns |> List.unique
         in let _ = if List.length ds > 1 then failwith "Several datasources found. Joins are not supported yet"
         in let (n, DS_TABLE(s)) = List.hd ds
         in P.sprintf "%s %s" s n
@@ -265,7 +392,7 @@ let sql_of rep  =
        then sel 
        else emit_select (emit_select_cols (wrap_subquery_cols rep.columns sq))
                         (wrap_subquery sel sq) 
-                        ~ordby:(Some(emit_ordby ord_cols))
+                        ~ordby:(emit_ordby ord_cols)
                         ~groupby:groupby
 
 
@@ -280,80 +407,14 @@ let sql_of rep  =
     in sql 
 
 
-let parametrized_sql report =
-    let sql = sql_of report
-    in let repl = List.mapi (fun i (n,v) -> (n, (DB.placeholder (i+1) n))) report.query_args
-    in let vals = List.map (fun (n,x) -> str_of_val x) report.query_args
-    in (Stmpl.parse_string sql repl, vals)
+let parametrized sql report =
+    let vals = List.map (fun x -> (x, (str_of_val (List.assoc x report.query_args))))
+                        (Stmpl.vars sql)
 
-let report_col_name col = 
-    match col.col_alias with 
-    | Some(x) -> x
-    | None -> ( match col.col_source with COLUMN(a,s) -> P.sprintf "%s_%s" a s )  
+    in let repl = List.mapi (fun i (x,v) -> (x, (DB.placeholder (i+1)))) vals
+    in (Stmpl.subst sql repl, (List.map snd vals))
 
 let metavars report =
     List.map ( fun (n,f) -> (n, f report) ) report.vars
-
-let extract_query_args col =
-
-    let argn (l,s) = P.sprintf "QUERY_ARG_%s%s" (String.uppercase (report_col_name col))
-                                                (if s <> "" then P.sprintf "_%s%d" s l
-                                                            else "" )
-
-    in let rec extract col = 
-
-        let rec extr ((l,s) as p) v = 
-            let arg = argn p
-            in match v with
-                | LIKE(VAR_REF(_))
-                | EQ(VAR_REF(_))
-                | NE(VAR_REF(_))
-                | LT(VAR_REF(_))
-                | GT(VAR_REF(_))
-                | GE(VAR_REF(_))
-                | LE(VAR_REF(_))  -> ([], v)
-
-                | LIKE(x)  -> ([(arg, x)], LIKE(VAR_REF(arg))) 
-                | EQ(x)    -> ([(arg, x)], EQ(VAR_REF(arg)))
-                | NE(x)    -> ([(arg, x)], NE(VAR_REF(arg)))
-                | LT(x)    -> ([(arg, x)], LT(VAR_REF(arg)))
-                | GT(x)    -> ([(arg, x)], GT(VAR_REF(arg))) 
-                | GE(x)    -> ([(arg, x)], GE(VAR_REF(arg)))
-                | LE(x)    -> ([(arg, x)], LE(VAR_REF(arg)))
-
-                | BETWEEN(a,b) -> let vs = extr_vals p [a;b]
-                                  in let args = List.map2 ( fun z1 z2 -> match (z1, z2) with
-                                                         | (Some((n, v)), zz) -> VAR_REF(n) 
-                                                         | (None, zz) -> zz
-                                                       )
-                                                       vs [a;b]
-                                  in let argz = List.filter Option.is_some vs |> List.map Option.get
-                                  in let (x1,x2) = match args with
-                                                   | x :: y :: [] -> (x,y)
-                                                   | _            -> assert false
-                                  in (argz, BETWEEN(x1, x2))
-
-                | NOT(a)   -> let (args, x) = extr p a in (args, NOT(x)) 
-                | AND(a,b) -> let (args, l, r) = extr_bin l a b in (args, AND(l, r))
-                | OR(a,b)  -> let (args, l, r) = extr_bin l a b in (args, OR(l, r))
-                          
-        and extr_bin l a b = 
-            let (args1, x1) = extr ((l+1),"L") a
-            in let (args2, x2) = extr ((l+1),"R") b
-            in (args1 @ args2, x1, x2) 
-
-        and extr_vals (l,s) vs =
-            List.mapi ( fun i x -> match x with
-                                   | VAR_REF _ -> None
-                                   | x         -> Some((argn (l, (P.sprintf "P%d_%s" i s)), x))
-                      ) vs
-                        
-
-        in match col.col_filter with
-            | Some(x) -> let (args, flt) = extr (0,"") x in (args, {col with col_filter = Some(flt)}) 
-            | None    -> ([], col)
-    
-    in extract col
-
 
 

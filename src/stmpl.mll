@@ -2,23 +2,31 @@
 open ExtString  
 open ExtString
 
+type chink_t = Chunk of string | Var of string
+
 }
 
 let ident   = ['_' 'a'-'z' 'A'-'Z'] ['_' 'a'-'z' 'A'-'Z' '0'-'9']*
 
-
-rule process result subst  = parse
-  | '$' '{' (ident as idnt) '}' { process ((try List.assoc idnt subst with Not_found -> "") :: result)
-                                           subst lexbuf 
+rule split result = parse
+  | '$' '{' (ident as idnt) '}' { split (Var(idnt)::result) lexbuf 
                                 }
-  | _     {process ((Lexing.lexeme lexbuf) :: result) subst lexbuf}
+  | _     {split (Chunk(Lexing.lexeme lexbuf)::result) lexbuf}
   | eof   { List.rev result }
 
 {
 
-let parse_string s repl = 
-    let lexbuf = Lexing.from_string s
-    in String.join "" (process [] repl lexbuf)
+let subst s repl =
+    let sf x = (try List.assoc x repl with Not_found -> "")
+    in let v = split [] (Lexing.from_string s)
+    in String.join "" (List.map (function Chunk(s) -> s | Var(s) -> sf s) v)
+
+
+let vars s = 
+    let v = split [] (Lexing.from_string s)
+    in List.fold_left (fun acc v -> match v with Var(s) -> s :: acc | _ -> acc)
+                      [] v
 
 }
+
 

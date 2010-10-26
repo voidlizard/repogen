@@ -26,5 +26,5 @@ let temp_table ?prefix:(p="tmptbl") (conn:connection) sel b =
     in let _ = conn#exec ~expect:[Command_ok] ~params:(Array.of_list b) (P.sprintf "CREATE TEMP TABLE %s ON COMMIT DROP AS (%s);"  s sel)
     in s
 
-let placeholder i n = (P.sprintf "$%d" i)
+let placeholder i = (P.sprintf "$%d" i)
 
