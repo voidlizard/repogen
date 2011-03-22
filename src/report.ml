@@ -150,6 +150,22 @@ and extract_args rep =
                 | GE(VAR_REF(_))
                 | LE(VAR_REF(_))  -> ([], v)
 
+                | LIKE(SRC(COLUMN _))
+                | EQ(SRC(COLUMN _))
+                | NE(SRC(COLUMN _))
+                | LT(SRC(COLUMN _))
+                | GT(SRC(COLUMN _))
+                | GE(SRC(COLUMN _))
+                | LE(SRC(COLUMN _))  -> ([], v)
+
+                | LIKE(SRC(FUN_CALL(x))) ->let (a, fn) =  of_call x in (a, LIKE(SRC(FUN_CALL(fn))))
+                | EQ(SRC(FUN_CALL(x)))  -> let (a, fn) =  of_call x in (a, EQ(SRC(FUN_CALL(fn))))
+                | NE(SRC(FUN_CALL(x)))  -> let (a, fn) =  of_call x in (a, NE(SRC(FUN_CALL(fn))))
+                | LT(SRC(FUN_CALL(x)))  -> let (a, fn) =  of_call x in (a, LT(SRC(FUN_CALL(fn))))
+                | GT(SRC(FUN_CALL(x)))  -> let (a, fn) =  of_call x in (a, GT(SRC(FUN_CALL(fn))))
+                | GE(SRC(FUN_CALL(x)))  -> let (a, fn) =  of_call x in (a, GE(SRC(FUN_CALL(fn))))
+                | LE(SRC(FUN_CALL(x)))  -> let (a, fn) =  of_call x in (a, LE(SRC(FUN_CALL(fn))))
+
                 | LIKE(x)  -> ([(arg, x)], LIKE(VAR_REF(arg))) 
                 | EQ(x)    -> ([(arg, x)], EQ(VAR_REF(arg)))
                 | NE(x)    -> ([(arg, x)], NE(VAR_REF(arg)))
@@ -158,22 +174,20 @@ and extract_args rep =
                 | GE(x)    -> ([(arg, x)], GE(VAR_REF(arg)))
                 | LE(x)    -> ([(arg, x)], LE(VAR_REF(arg)))
 
-                | BETWEEN(a,b) -> let vs = extr_vals [a;b]
-                                  in let args = List.map2 ( fun z1 z2 -> match (z1, z2) with
-                                                         | (Some((n, v)), zz) -> VAR_REF(n) 
-                                                         | (None, zz) -> zz
-                                                       )
-                                                       vs [a;b]
-                                  in let argz = List.filter Option.is_some vs |> List.map Option.get
-                                  in let (x1,x2) = match args with
-                                                   | x :: y :: [] -> (x,y)
-                                                   | _            -> assert false
-                                  in (argz, BETWEEN(x1, x2))
+                | BETWEEN(a,b) -> let (args1, x1) = extr_part a
+                                  in let (args2, x2) = extr_part b 
+                                  in (args1 @ args2, BETWEEN(x1, x2))
 
                 | NOT(a)   -> let (args, x) = extr a in (args, NOT(x)) 
                 | AND(a,b) -> let (args, l, r) = extr_bin a b in (args, AND(l, r))
                 | OR(a,b)  -> let (args, l, r) = extr_bin a b in (args, OR(l, r))
-                          
+
+        and extr_part x = match x with
+            | SRC(FUN_CALL(f)) -> let (a, fn) = of_call f in (a, SRC(FUN_CALL(fn)))
+            | VAR_REF _      -> ([], x)
+            | SRC(COLUMN _)  -> ([], x)
+            | _              -> let arg = argn () in ([(arg, x)], VAR_REF(arg))
+
         and extr_bin a b = 
             let (args1, x1) = extr a
             in let (args2, x2) = extr b
@@ -203,13 +217,12 @@ let execute_actions t report =
     | BEFORE -> List.fold_left (fun acc x -> x acc) report report.pre_actions
     | AFTER  -> List.fold_left (fun acc x -> x acc) report report.post_actions
 
-let str_of_val = function
+let rec str_of_val = function
     | NUM_CONST(s) -> s
     | STR_CONST(s) -> s
     | VAR_REF(s)   -> P.sprintf "${%s}" s
-    | SRC _        -> failwith "Unsupported yet filter arg (var)" 
-
-let rec emit_sql_fun fn args = 
+    | SRC(x)       -> fcn x
+and emit_sql_fun fn args = 
     let argz = List.map (fun a -> emit_sql_fun_arg a) args |> String.join ","
     in P.sprintf "%s(%s)" fn argz
 and emit_sql_fun_arg = function
@@ -227,7 +240,7 @@ and op src v = match v with
 | OR(a,b)  -> P.sprintf "(%s or %s)" (op src a) (op src b)
 | AND(a,b) -> P.sprintf "(%s and %s)" (op src a) (op src b)
 | BETWEEN(a, b) -> P.sprintf "%s between %s and %s" (fcn src) (quote a) (quote b)
-| _      -> P.sprintf "%s %s %s" (fcn src) (op_of v) (quote (val_of v))
+| _      -> P.sprintf "%s %s %s" (fcn src) (op_of v) (quote (val_of v)) 
 and op_of = function
     | LIKE _ -> "like"
     | GT _   -> ">"
@@ -238,10 +251,11 @@ and op_of = function
     | EQ _   -> "="
     | _      -> assert false
 and quote = function
+    | SRC(x)       -> fcn x 
     | STR_CONST(s) -> P.sprintf "'%s'" s
     | NUM_CONST(v) -> v
     | VAR_REF(n) -> P.sprintf "${%s}" n
-    | SRC(x) ->  failwith "Unsupported yet filter arg (var)" 
+
 and val_of = function
     | LIKE(v) | GT(v) | LT(v) | GE(v) 
     | LE(v) | LE(v) | NE(v) | EQ(v) -> v
