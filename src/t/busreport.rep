@@ -1,6 +1,6 @@
 %% ТЕСТОВЫЙ ОТЧЕТ 3
 
-CONNECTION db1 "dbname=mososm2"
+CONNECTION db1 "dbname=tambov_prod"
 
 TEMPLATE_DIRS "t:/home/dmz/templates"
 
@@ -37,6 +37,14 @@ COLUMN
     SOURCE v.speeding
     ALIAS speeding
     NAME  "превышения скорости"
+    %% FOLD YES
+END
+
+COLUMN
+    SOURCE SQL.bus_mileage(v.gos_number, "2010-11-01", "2010-12-31")
+    ALIAS mileage 
+    NAME  "пробег"
+    %% SORT ASC
     %% FOLD YES
 END
 

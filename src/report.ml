@@ -49,7 +49,7 @@ and fun_call_t = { fun_ns: fun_ns_t; fun_name: string; fun_args: fun_arg_t list 
 and field_t = { field_alias: string; field_source: field_src_t; field_flt: (filt_op_t * string) list}
 and field_src_t = FIELD_FUN_CALL of fun_call_t
 
-and val_t = STR_CONST of string | NUM_CONST of string | VAR_REF of string
+and val_t = STR_CONST of string | NUM_CONST of string | VAR_REF of string | SRC of source_t
 
 let ident i s = P.sprintf "%s %s" i s
 
@@ -207,6 +207,7 @@ let str_of_val = function
     | NUM_CONST(s) -> s
     | STR_CONST(s) -> s
     | VAR_REF(s)   -> P.sprintf "${%s}" s
+    | SRC _        -> failwith "Unsupported yet filter arg (var)" 
 
 let rec emit_sql_fun fn args = 
     let argz = List.map (fun a -> emit_sql_fun_arg a) args |> String.join ","
@@ -240,6 +241,7 @@ and quote = function
     | STR_CONST(s) -> P.sprintf "'%s'" s
     | NUM_CONST(v) -> v
     | VAR_REF(n) -> P.sprintf "${%s}" n
+    | SRC(x) ->  failwith "Unsupported yet filter arg (var)" 
 and val_of = function
     | LIKE(v) | GT(v) | LT(v) | GE(v) 
     | LE(v) | LE(v) | NE(v) | EQ(v) -> v

@@ -61,6 +61,8 @@ let string_constant s = STR_CONST(s)
 
 let number_constant v = NUM_CONST(v)
 
+let var_filt_arg x = SRC x
+
 let with_column cattr report = 
     let col = List.fold_left (fun c f -> f c)
                              { col_name  = None;

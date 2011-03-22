@@ -191,6 +191,7 @@ filt_bin_arg:
 filt_arg:
     | NUMBER                         { B.number_constant $1 }
     | STRING                         { B.string_constant $1 }
+//    | source                         { B.var_filt_arg $1 }
 
 filt_like_arg:
     | OBR STRING CBR                 { B.string_constant $2 }

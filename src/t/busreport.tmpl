@@ -3,7 +3,7 @@ Report column: ${header.busn}
 Report column: ${header.driver}
 
 #foreach (row in rows)
-${row.busn} : ${row.year}  : ${row.driver} : ${row.speeding}
+${row.obj.busn} : ${row.obj.year}  : ${row.obj.driver} : ${row.obj.speeding} : ${row.obj.mileage}
 #end
 
 ${SQL}
