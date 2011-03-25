@@ -53,6 +53,7 @@ rule token = parse
     | "CONNECTION"    { CONNECTION }
     | "DATASOURCE"    { DATASOURCE }
     | "TABLE"         { TABLE }
+    | "FUNCTION"      { FUNCTION }
     | "OUTPUT"        { OUTPUT }
     | "STDOUT"        { STDOUT }
     | "FILE"          { FILE }

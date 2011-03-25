@@ -30,7 +30,7 @@ and order_t = ORDER of order_type_t * nulls_t option
 and order_type_t = ASC | DESC
 and nulls_t = NULLS_FIRST | NULLS_LAST
 and source_t = COLUMN of string * string | FUN_CALL of fun_call_t
-and datasource_t = DS_TABLE of string
+and datasource_t = DS_TABLE of string | DS_FUN of fun_call_t
 and connection_t = string
 and output_t = STDOUT | FILE of string
 and action_when_t = BEFORE | AFTER
@@ -86,12 +86,21 @@ and extract_args rep =
     let argn = let d = ref 0 in function () -> d := 1 + !d ; (P.sprintf "P%02d" !d)
 
     in let rec args_of rep = 
-        let args, cols = of_columns rep.columns
+        let (args'', ds'') = of_datasources rep.datasources
+        in let args, cols = of_columns rep.columns
         in let args', fields' = of_fields rep.fields
-        in { rep with columns = cols;
+        in { rep with datasources = ds'';
+                      columns = cols;
                       fields = fields';
-                      query_args = args @ args'
+                      query_args = args'' @ args @ args'
            }
+
+    and of_datasources x = List.fold_left of_datasource ([], []) x
+
+    and of_datasource (args, ds)  = function
+        | (n,DS_TABLE _) as x  -> ( args, ds @ [x] )
+        | (n,DS_FUN(fc))       -> let (args', fc') = of_call fc
+                                  in (args @ args', ds @ [(n, DS_FUN(fc'))] )
 
     and of_column (args, cols) x =
         let (a, c)      = match x.col_filter with 
@@ -365,10 +374,9 @@ let sql_of rep  =
     in let emit_from rep = 
         let ds = List.fold_left (fun acc x -> (ds_of_col rep x) @ acc) [] rep.columns |> List.unique
         in let _ = if List.length ds > 1 then failwith "Several datasources found. Joins are not supported yet"
-        in let (n, DS_TABLE(s)) = List.hd ds
-        in P.sprintf "%s %s" s n
-
-
+        in match (List.hd ds) with
+            | (n, DS_TABLE(s)) -> P.sprintf "%s %s" s n
+            | (n, DS_FUN({fun_name=s; fun_args=args}))   -> P.sprintf "(select * from %s) as %s" (emit_sql_fun s args) n
 
     in let emit_where ?idnt:(i="") rep =
         let flts = List.fold_left ( fun acc c -> match c.col_filter with 

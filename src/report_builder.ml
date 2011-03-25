@@ -6,14 +6,25 @@ module R = Report
 
 type ds_tbl_def = { ds_alias: string; ds_src: string }
 
+type ds_fun_def = { ds_fun_alias: string; ds_fun_call: fun_call_t }
+
 let datasource_source source ds = { ds with ds_src = source }
 
 let datasource_alias alias ds   = { ds with ds_alias = alias }
+
+let datasource_fun_alias alias ds   = { ds with ds_fun_alias = alias }
+
+let datasource_fun_source source ds = { ds with ds_fun_call = source }
 
 let with_datasource_table ds_f report =
     let mt_ds = { ds_alias = ""; ds_src = "" }
     in let ds = List.fold_left (fun ds f -> f ds) mt_ds ds_f
     in { report with datasources = (ds.ds_alias, DS_TABLE(ds.ds_src)) :: report.datasources }
+
+let with_datasource_function ds_f report =
+    let mt_ds = { ds_fun_alias = ""; ds_fun_call = {fun_ns=SQL; fun_name="fake"; fun_args = []}}
+    in let ds = List.fold_left (fun ds f -> f ds) mt_ds ds_f
+    in { report with datasources = (ds.ds_fun_alias, DS_FUN(ds.ds_fun_call)) :: report.datasources }
 
 let with_datasource ds report = ds report
 

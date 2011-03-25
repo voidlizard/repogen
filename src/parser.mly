@@ -16,7 +16,7 @@ module P = Printf
 %token FIELD COLUMN END ALIAS NAME SOURCE FILTER SORT FOLD
 %token GROUP
 %token NONE YES NO NONE ASC DESC
-%token CONNECTION DATASOURCE TABLE
+%token CONNECTION DATASOURCE TABLE FUNCTION
 %token TEMPLATE TEMPLATE_DIRS
 %token OUTPUT FILE TEMPORARY STDOUT
 %token POSTPROCESS ECHO ABORT DROP
@@ -141,13 +141,21 @@ connection:
 
 datasource:
     | DATASOURCE TABLE datasource_args END  { B.with_datasource_table $3 }
+    | DATASOURCE FUNCTION datasource_fun_args END  { B.with_datasource_function $3 }
 
 datasource_args:                 { [] }
     | datasource_arg datasource_args { $1 :: $2 }
 
+datasource_fun_args:                 { [] }
+    | datasource_fun_arg datasource_fun_args { $1 :: $2 }
+
 datasource_arg:
     | ALIAS  IDENT                { B.datasource_alias $2  }
     | SOURCE IDENT                { B.datasource_source $2 }
+
+datasource_fun_arg:
+    | ALIAS  IDENT                { B.datasource_fun_alias $2 }
+    | SOURCE field_source_ref     { B.datasource_fun_source $2 } 
 
 output:
     | OUTPUT TEMPORARY               { B.with_output_temp () }
