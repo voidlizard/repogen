@@ -218,7 +218,9 @@ var_ref:
     DOLLAR OBRACE IDENT CBRACE              { B.var_ref $3 }
 
 var_def1:
-    VARIABLE var_def1_args END              { B.with_var_def $2 }
+    | VARIABLE var_def1_args END            { B.with_var_def (B.assemble_var $2) }
+    | SET IDENT STRING                      { B.with_var_def {B.tmp_var with B.tmp_var_alias=Some($2); B.tmp_var_value=Some($3)} }
+    | SET IDENT STRING AS STRING            { B.with_var_def {B.tmp_var_alias=Some($2); B.tmp_var_value=Some($3); B.tmp_var_name=Some($5)} }
 
 var_def1_args:                              { [] }
     | var_def1_arg var_def1_args            { $1 :: $2 }

@@ -1,3 +1,4 @@
+open ExtList
 open Postgresql
 open Parser
 open Util
@@ -33,7 +34,8 @@ let dump_output report out =
 type opt = { mutable opt_filename: string option;
              mutable opt_output: output_t option;
              mutable opt_tmpl: string option;
-             mutable opt_vars: (string * string) list
+             mutable opt_vars: (string * string) list;
+             mutable opt_no_sql_query: bool
            }
 
 let report_of = function
@@ -79,10 +81,11 @@ let multi_sql_query report connection sql binds =
     in Db.with_connection fn connection
 
 let () =
-    let opts = { opt_filename = None; opt_output = None; opt_tmpl = None; opt_vars = [] }
+    let opts = { opt_filename = None; opt_output = None; opt_tmpl = None; opt_vars = []; opt_no_sql_query = false }
     in let _ = Arg.parse [
                             ("--out-file",   Arg.String(fun s -> opts.opt_output <- Some(FILE(s))) , "set output file name");
                             ("--out-stdout", Arg.Unit(fun ()  -> opts.opt_output <- Some(STDOUT) ) , "set output file to STDOUT");
+                            ("--no-query",   Arg.Unit(fun ()  -> opts.opt_no_sql_query <- true) ,    "skip SQL query execution");
                             ("--template",   Arg.String(fun s -> opts.opt_tmpl <- Some(s) ) , "set template");
                             ("--version",    Arg.Unit(fun () -> print_endline Version.version_string; Pervasives.exit 0), "");
                             ("--define",     Arg.String(fun s -> Option.may (fun x -> opts.opt_vars <- (x::opts.opt_vars) ) (Misc_parsers.parse_kv s) ) , "NAME=VALUE, define a variable");
@@ -100,11 +103,15 @@ let () =
  
             in let conn = connection_of report
 
-            in let (data, fields) = if not (has_sql_fields report)
-                                    then simple_sql_query report conn sql binds
-                                    else multi_sql_query report conn sql binds
-            
-            in let model = Model.make (column_headers report) data ((metavars report) @ fields)
+            in let (data, fields) = if not opts.opt_no_sql_query then (
+                                        if not (has_sql_fields report)
+                                        then simple_sql_query report conn sql binds
+                                        else multi_sql_query report conn sql binds )
+                                     else ([],[])
+           
+            in let filt = List.unique ~cmp:(fun (a,_) (b,_) -> a = b)
+
+            in let model = Model.make (column_headers report) data (filt (List.rev (((metavars report) @ fields)))) (filt (List.rev report.var_desc))
 
             in match report.template with 
                | Some(s) ->

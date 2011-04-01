@@ -174,8 +174,14 @@ let with_tmp_var_name  name  v = { v with tmp_var_name = Some(name) }
 let with_tmp_var_alias alias v = { v with tmp_var_alias = Some(alias) }
 let with_tmp_var_value value v = { v with tmp_var_value = Some(value) }
 
-let with_var_def vars report = report 
-    (*assert false*)
+let assemble_var = List.fold_left (fun acc f -> f acc) tmp_var
+
+let with_var_def var r =
+    match var with 
+     | { tmp_var_alias = Some(alias); tmp_var_value=Some(value); tmp_var_name=Some(name) } -> { r with vars = (alias, fun _ -> value) :: r.vars;
+                                                                                                 var_desc = (alias, name) :: r.var_desc }
+     | { tmp_var_alias = Some(alias); tmp_var_value=Some(value) } -> { r with vars = (alias, fun _ -> value) :: r.vars }
+     | _ -> failwith "Variable's alias and value are mandatory"
 
 let populate_vars report = 
     let v = List.map ( fun (n,v) -> (n, (fun r -> str_of_val (List.assoc n r.query_args)))) report.query_args

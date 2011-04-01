@@ -1,0 +1,23 @@
+-----------------------------------
+TEST VARIABLES IN TEMPLATE
+
+testvar1: ${testvar1}
+testvar2: ${testvar2}
+district: ${district}
+r1:       ${r1}
+r2:       ${r2}
+r5:       ${r5}
+
+TEST VARIABLES LIST
+
+#foreach (v in variables)
+#if (v.name)
+${v.alias} (${v.name}) : ${v.value}
+#end
+#end
+
+SQL:
+${SQL}
+
+-----------------------------------
+

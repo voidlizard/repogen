@@ -1,0 +1,11 @@
+#set (num=0)
+variables = [
+#foreach (v in variables)
+#if (v.name)\
+#if (num>0),\
+#end\
+{ alias:"${v.alias}", name:"${v.name}", value:"${v.value}" }
+#set (num=num+1)
+#end
+#end
+]

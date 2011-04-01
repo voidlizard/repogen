@@ -1,0 +1,37 @@
+CONNECTION db1 "dbname=mososm2"
+
+DATASOURCE FUNCTION 
+    ALIAS  rule
+	SOURCE SQL.f_schedule_report(${r1}, ${r2}, ${district})
+END
+
+VARIABLE
+    ALIAS testvar1
+    NAME "тестовая переменная один"
+    VALUE "1"
+END
+
+VARIABLE
+    ALIAS testvar1
+    NAME "тестовая переменная один"
+    VALUE "QQQ"
+END
+
+SET testvar2 "22" AS "тестовая переменная два"
+
+%%ECHO BEFORE "testvar1: ${testvar1}"
+%%ECHO BEFORE "testvar2: ${testvar2}"
+%%ECHO BEFORE "${SQL}"
+%%ECHO BEFORE "${r1}"
+%%ECHO BEFORE "${P01} ${P02} ${P03}"
+%%ABORT
+
+COLUMN
+	SOURCE rule.date
+    FILTER LE(${r2})
+END
+
+COLUMN
+	SOURCE rule.gos_number
+END
+
