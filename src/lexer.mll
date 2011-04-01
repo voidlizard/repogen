@@ -29,6 +29,10 @@ rule token = parse
     | number          { NUMBER (lexeme lexbuf) }
     | "*"             { ASTERISK }
     | ':'             { COLON }
+    | "VARIABLE"      { VARIABLE }
+    | "VALUE"         { VALUE }
+    | "AS"            { AS }
+    | "SET"           { SET }
     | "ALIAS"         { ALIAS }
     | "COLUMN"        { COLUMN }
     | "END"           { END }
@@ -82,6 +86,9 @@ rule token = parse
     | "."             { DOT }
     | "("             { OBR }
     | ")"             { CBR }
+    | "{"             { OBRACE }
+    | "}"             { CBRACE }
+    | "$"             { DOLLAR }
     | ident           { IDENT (lexeme lexbuf) }
 
     (* Char literals *)

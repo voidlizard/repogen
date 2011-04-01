@@ -16,6 +16,7 @@ type report_t = { columns: col_t list;
                   pre_actions:  action_t list;
                   post_actions: action_t list;
                   vars: (string * varfun_t) list;
+                  var_desc: (string * string) list;
                   query_args: (string * val_t) list
                 }
 and col_t = { col_name: string option;
@@ -432,9 +433,10 @@ let sql_of rep  =
 
 
 let parametrized sql report =
-    let vals = List.map (fun x -> (x, (str_of_val (List.assoc x report.query_args))))
+    let const = List.map (fun (k, f) -> (k, STR_CONST(f report))) report.vars
+    in let vals' = List.map (fun x -> (x, (str_of_val (List.assoc x (report.query_args @ const) ))))
                         (Stmpl.vars sql)
-
+    in let vals = List.unique vals'
     in let repl = List.mapi (fun i (x,v) -> (x, (DB.placeholder (i+1)))) vals
     in (Stmpl.subst sql repl, (List.map snd vals))
 

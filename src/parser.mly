@@ -6,14 +6,14 @@ module P = Printf
 
 %}
 
-%token OBR CBR
+%token DOLLAR OBR CBR OBRACE CBRACE
 %token <int> INT
 %token <string> STRING
 %token <string> NUMBER
 %token <string> IDENT
 %token ASTERISK COLON
 %token DOT COMMA
-%token FIELD COLUMN END ALIAS NAME SOURCE FILTER SORT FOLD
+%token FIELD COLUMN VARIABLE SET AS END VALUE ALIAS NAME SOURCE FILTER SORT FOLD
 %token GROUP
 %token NONE YES NO NONE ASC DESC
 %token CONNECTION DATASOURCE TABLE FUNCTION
@@ -53,6 +53,7 @@ entry:
     | output                { $1 }
     | postprocess           { $1 }
     | misc_actions          { $1 }
+    | var_def1              { $1 } 
 
 column:
     | COLUMN column_attribs END  { $2 }
@@ -126,6 +127,7 @@ fun_arg:
     | col_ref                   { B.fun_arg_col_ref $1 }
     | table_ref                 { B.fun_arg_table_ref $1 }
     | field_source_ref          { B.fun_arg_src $1 }
+    | var_ref                   { B.fun_arg_var $1 }
 
 filt_by:
     | BY OBR IDENT CBR          { $3 }
@@ -200,15 +202,30 @@ filt_arg:
     | NUMBER                         { B.number_constant $1 }
     | STRING                         { B.string_constant $1 }
     | source                         { B.var_filt_arg $1 }
+    | var_ref                        { $1 }
 
 filt_like_arg:
     | OBR STRING CBR                 { B.string_constant $2 }
     | OBR source CBR                 { B.var_filt_arg $2 }
-
+    | OBR var_ref CBR                { $2 }
 
 filt_logic_op:
     | OR  OBR filter_eq COMMA filter_eq CBR { (R.OR($3,$5))  }
     | AND OBR filter_eq COMMA filter_eq CBR { (R.AND($3,$5)) }
     | NOT OBR filter_eq CBR                 { (R.NOT($3)) }
+
+var_ref:
+    DOLLAR OBRACE IDENT CBRACE              { B.var_ref $3 }
+
+var_def1:
+    VARIABLE var_def1_args END              { B.with_var_def $2 }
+
+var_def1_args:                              { [] }
+    | var_def1_arg var_def1_args            { $1 :: $2 }
+
+var_def1_arg:
+    | NAME STRING                           { B.with_tmp_var_name $2 }
+    | ALIAS IDENT                           { B.with_tmp_var_alias $2 }
+    | VALUE STRING                          { B.with_tmp_var_value $2 }
 
 %%

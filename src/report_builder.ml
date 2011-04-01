@@ -72,6 +72,8 @@ let string_constant s = STR_CONST(s)
 
 let number_constant v = NUM_CONST(v)
 
+let var_ref v = VAR_REF(v)
+
 let var_filt_arg x = SRC x
 
 let with_column cattr report = 
@@ -138,6 +140,8 @@ let fun_arg_num num = FA_VAL(NUM_CONST(num))
 
 let fun_arg_str s = FA_VAL(STR_CONST(s))
 
+let fun_arg_var v = FA_VAL(v)
+
 let fun_call (ns, (name, args)) = 
     {fun_ns = ns; fun_name = name; fun_args = args}
 
@@ -162,6 +166,17 @@ let with_field fattr report =
         | _                                          -> failwith "Field alias and source are mandatory"
     in { report with fields = field :: report.fields }
 
+type tmp_vardef = { tmp_var_name: string option; tmp_var_alias: string option; tmp_var_value: string option }
+
+let tmp_var = { tmp_var_name = None; tmp_var_alias = None; tmp_var_value = None }
+
+let with_tmp_var_name  name  v = { v with tmp_var_name = Some(name) }
+let with_tmp_var_alias alias v = { v with tmp_var_alias = Some(alias) }
+let with_tmp_var_value value v = { v with tmp_var_value = Some(value) }
+
+let with_var_def vars report = report 
+    (*assert false*)
+
 let populate_vars report = 
     let v = List.map ( fun (n,v) -> (n, (fun r -> str_of_val (List.assoc n r.query_args)))) report.query_args
     in { report with vars = report.vars @ v}
@@ -177,6 +192,7 @@ let build_report e  =
                 pre_actions = [];
                 post_actions = [];
                 query_args = [];
+                var_desc = [];
                 vars =  ("SQL", (fun r -> try sql_of r with _ -> ""))
                      :: ("OUTPUT",   (fun r -> match r.output with STDOUT -> "stdout" | FILE(s) -> s))
                      :: ("TEMPLATE", (fun r -> match r.template with Some(x) -> x | _ -> ""))
