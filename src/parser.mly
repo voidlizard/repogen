@@ -139,7 +139,14 @@ template_dirs:
     | TEMPLATE_DIRS STRING       { B.with_template_dirs $2 }
 
 connection:
-    | CONNECTION IDENT STRING    { ( $2, $3) }
+    | CONNECTION IDENT connection_arg    { ( $2, $3) }
+
+connection_arg:
+    | STRING                     { B.connection_arg_str $1 }
+    | connection_arg_var         { $1 }
+
+connection_arg_var:
+    DOLLAR OBRACE IDENT CBRACE   { B.connection_arg_var $3 }
 
 datasource:
     | DATASOURCE TABLE datasource_args END  { B.with_datasource_table $3 }
