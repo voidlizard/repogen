@@ -31,6 +31,10 @@ let with_datasource ds report = ds report
 let with_connection conn report =
     { report with connections =  conn :: report.connections }
 
+let connection_arg_str s = CONN_STR_CONST(s)
+
+let connection_arg_var s = CONN_VAR_REF(s)
+
 let col_ref a b = COLUMN(a,b)
 
 let table_ref a = COLUMN(a, "*")

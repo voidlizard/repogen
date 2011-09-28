@@ -32,7 +32,7 @@ and order_type_t = ASC | DESC
 and nulls_t = NULLS_FIRST | NULLS_LAST
 and source_t = COLUMN of string * string | FUN_CALL of fun_call_t
 and datasource_t = DS_TABLE of string | DS_FUN of fun_call_t
-and connection_t = string
+and connection_t = CONN_STR_CONST of string | CONN_VAR_REF of string
 and output_t = STDOUT | FILE of string
 and action_when_t = BEFORE | AFTER
 and action_t = ( report_t -> report_t )
@@ -218,9 +218,12 @@ let column_headers report =
                         | { col_name = None;    col_alias = Some(a) } -> (a, a)
                         | { col_name = None;    col_alias = None }    -> ("undef", "undef")
                         | { col_name = Some(x); col_alias = None }    -> assert false )
-             report.columns
+             report.columns 
 
-let connection_of r = snd (List.hd r.connections)
+let connection_of r =
+    match snd (List.hd r.connections) with
+    | CONN_STR_CONST(s) -> s
+    | CONN_VAR_REF(s)   -> (List.assoc s r.vars) r
 
 let execute_actions t report = 
     match t with 
